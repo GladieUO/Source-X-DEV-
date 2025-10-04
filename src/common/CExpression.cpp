@@ -642,70 +642,71 @@ CExpression& CExpression::GetExprParser() // static
     */
 }
 
-llong CExpression::GetSingle(lpctstr & refStrExpr )
+llong CExpression::GetSingle(lpctstr & refStrExpr)
 {
 	ADDTOCALLSTACK("CExpression::GetSingle");
 	// Parse just a single expression without any operators or ranges.
     ASSERT(refStrExpr);
-    GETNONWHITESPACE( refStrExpr );
+    GETNONWHITESPACE(refStrExpr);
 
     lpctstr ptcStartingString = refStrExpr;
-    if (refStrExpr[0]=='.')
+
+    // Shouldn't this go straight to decimal?
+    if (refStrExpr[0] == '.')
         ++refStrExpr;
 
-    if ( refStrExpr[0] == '0' )	// leading '0' = hex value.
+    // Leading '0' = hex value.
+    if (refStrExpr[0] == '0')
 	{
-		// A hex value.
-        if ( refStrExpr[1] == '.' )	// leading 0. means it really is decimal.
+        // Leading '0.' means it really is decimal.
+        if (refStrExpr[1] == '.')
 		{
             refStrExpr += 2;
 			goto try_dec;
 		}
 
-        // Skip the leading '0'
-        refStrExpr += 1;
+        // Skip the leading '0'.
+        ++refStrExpr;
 
         uint64 uiVal = 0;
-        uint uiDigits = 0;
-		while (true)
+        // Loop each character.
+        while (true)
 		{
-            tchar ch = *refStrExpr;
-			if ( IsDigit(ch) )
+		    tchar ch = *refStrExpr;
+
+		    // Invalid hex number.
+		    if (!std::isxdigit(ch)) {
+		        // Ok i'm confused. it must be decimal.
+		        if (ch == '.' && ptcStartingString[0] != '0')
+		        {
+		            refStrExpr = ptcStartingString;
+		            goto try_dec;
+		        }
+		        break;
+		    }
+
+		    if (IsDigit(ch))
             {
 				ch -= '0';
-                ++ uiDigits;
             }
             else
 			{
 				ch = static_cast<tchar>(tolower(ch));
-				if ( ch > 'f' || ch < 'a' )
-				{
-                    if ( ch == '.' && ptcStartingString[0] != '0' )	// ok i'm confused. it must be decimal.
-					{
-                        refStrExpr = ptcStartingString;
-						goto try_dec;
-					}
-					break;
-				}
 				ch -= 'a' - 10;
-                ++ uiDigits;
 			}
 
-            if (uiDigits > 16)
-            {
-                g_Log.EventWarn("Hexadecimal value parsing will overflow: %s.\n", ptcStartingString);
-                return -1;
-            }
+		    uiVal = (uiVal << 4ull) | ch;
 
-            uiVal = (uiVal << 4ull) | ch; // Equivalent to 'val *= 0x10; val += ch;'
-            //val *= 0x10;
-            //val += ch;
+            // Move to next character.
+            ++refStrExpr;
+		}
 
-            ++ refStrExpr;
+        if (uiVal > INT64_MAX)
+        {
+            g_Log.EventWarn("Hexadecimal value parsing will overflow: %s.\n", ptcStartingString);
         }
-        if (uiDigits <= 8)
-            return (int64)(int32)uiVal;
-        return (int64)uiVal;
+
+        return static_cast<int64>(uiVal);
 	}
     /*
     // We could just use this, but it doesn't "eat" the string pointer.
