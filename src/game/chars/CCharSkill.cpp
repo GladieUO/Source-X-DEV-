@@ -2345,10 +2345,16 @@ int CChar::Skill_Taming( SKTRIG_TYPE stage )
 	if ( stage == SKTRIG_START )
 	{
 		int iDifficulty = iTameBase/10;
-		if ( pChar->Memory_FindObjTypes( this, MEMORY_FIGHT|MEMORY_HARMEDBY|MEMORY_IRRITATEDBY|MEMORY_AGGREIVED ))	// I've attacked it before ?
-			iDifficulty += 50;	// is it too much?
+		if ( pChar->Memory_FindObjTypes(this, MEMORY_FIGHT | MEMORY_HARMEDBY | MEMORY_IRRITATEDBY | MEMORY_AGGREIVED) )
+		{
+			iDifficulty += 50;   // I've attacked it before ?
+		}
+		else
+		{
+			iDifficulty += 10;
+		}
 
-        m_atTaming.m_dwStrokeCount = (dword)(g_Rand.GetVal(4) + 2);
+        m_atTaming.m_dwStrokeCount = (dword)(g_Rand.GetVal(4) + 4);
 		return iDifficulty;		// How difficult? 1-1000
 	}
 
