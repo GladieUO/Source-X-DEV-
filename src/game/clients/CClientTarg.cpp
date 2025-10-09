@@ -1903,18 +1903,18 @@ bool CClient::OnTarg_Use_Item( CObjBase * pObjTarg, CPointMap & pt, ITEMID_TYPE 
 			{
 				return Skill_Menu(SKILL_CARPENTRY, "sm_carpentry", pItemUse->GetID());
 			}
-			if ( pItemUse->IsSameDispID( ITEMID_DAGGER ))
-			{
-				// set the target item
-                if (pItemTarg)
-                    m_Targ_UID = pItemTarg->GetUID();
-                else
-                    m_Targ_UID.InitUID();
+			// if ( pItemUse->IsSameDispID( ITEMID_DAGGER ))
+			// {
+			// 	// set the target item
+            //     if (pItemTarg)
+            //         m_Targ_UID = pItemTarg->GetUID();
+            //     else
+            //         m_Targ_UID.InitUID();
 
-				return Skill_Menu(SKILL_BOWCRAFT, "sm_bowcraft", pItemUse->GetID());
-			}
-			SysMessageDefault( DEFMSG_ITEMUSE_LOG_USE );
-			return false;
+			// 	return Skill_Menu(SKILL_BOWCRAFT, "sm_bowcraft", pItemUse->GetID());
+			// }
+			// SysMessageDefault( DEFMSG_ITEMUSE_LOG_USE );
+			// return false;
 
 		case IT_FISH:
 			if ( !pItemTarg || !m_pChar->CanUse(pItemTarg, true) )
