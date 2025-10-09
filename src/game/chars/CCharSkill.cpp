@@ -687,8 +687,8 @@ bool CChar::Skill_MakeItem_Success()
 
 	if ( m_atCreate.m_dwAmount != 1 )
 	{
-		if ( pItem->IsType(IT_SCROLL) )
-			pItem->m_itSpell.m_spelllevel = iSkillLevel;
+		//if ( pItem->IsType(IT_SCROLL) )
+		//	pItem->m_itSpell.m_spelllevel = iSkillLevel;
 
 		const CItemBase *ptItemDef = CItemBase::FindItemBase(m_atCreate.m_iItemID);
 		ASSERT(ptItemDef);
