@@ -3499,10 +3499,10 @@ int CChar::Spell_CastStart()
     int64 iWaitTime = IsPriv(PRIV_GM) ? 1 : pSpellDef->m_CastTime.GetLinear(Skill_GetBase((SKILL_TYPE)iSkill)); // in tenths of second
 
     // For every point in faster casting, the casting time is shortened by 0.25 or 1/4 of a second. (Keeping 0,2 and not 0,25 for backwards compatibility).
-	iWaitTime -= 2 * (int64)GetPropNum(COMP_PROPS_CHAR, PROPCH_FASTERCASTING, true);
+	iWaitTime -= 1 * (int64)GetPropNum(COMP_PROPS_CHAR, PROPCH_FASTERCASTING, true);
 
-	if ( iWaitTime < 1 )
-		iWaitTime = 1;
+	if ( iWaitTime < 10 )
+		iWaitTime = 10;
 
     CScriptTriggerArgsPtr pScriptArgs = CScriptParserBufs::GetCScriptTriggerArgsPtr();
     pScriptArgs->Init((int)m_atMagery.m_iSpell, iDifficulty, 0, pItem);
