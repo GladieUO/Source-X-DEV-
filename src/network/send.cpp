@@ -3620,94 +3620,92 @@ void PacketGumpDialog::writeControls(const CClient* target, std::vector<CSString
 		writeStandardControls(controls, texts);
 }
 
-void PacketGumpDialog::writeCompressedControls(std::vector<CSString> const* controls, std::vector<CSString> const* texts)
+void PacketGumpDialog::writeCompressedControls(std::vector<CSString> const *controls, std::vector<CSString> const *texts)
 {
-	ADDTOCALLSTACK("PacketGumpDialog::writeCompressedControls");
+    ADDTOCALLSTACK("PacketGumpDialog::writeCompressedControls");
 
-	seek(0);
-	writeByte(XCMD_CompressedGumpDialog);
+    seek(0);
+    writeByte(XCMD_CompressedGumpDialog);
+    seek(19); // Skip header bytes
 
-	seek(19);
+    // --- Controls ---
+    if (controls && !controls->empty())
+    {
+        // Calculate exact buffer size (+1 for final null terminator)
+        uint controlLength = 1;
+        for (auto const &ctrl : *controls)
+            controlLength += (uint)ctrl.GetLength() + 2; // braces {}
 
-    if (controls)
-	{
-		// compress and write controls
-		uint controlLength = 1;
-		for (CSString const& ctrl : *controls)
+        char *toCompress = new char[controlLength];
+        uint pos         = 0;
+
+        for (auto const &ctrl : *controls)
         {
-            controlLength += (uint)ctrl.GetLength() + 2; // String terminator not needed.
+            int written = snprintf(&toCompress[pos], controlLength - pos, "{%s}", ctrl.GetBuffer());
+            pos += written;
+        }
+        toCompress[pos] = '\0'; // ensure final null terminator
+
+        zlib::uLong compressLength = zlib::compressBound(pos);
+        byte *compressBuffer       = new byte[compressLength];
+
+        int error = zlib::compress2(compressBuffer, &compressLength, (byte *)toCompress, pos, Z_DEFAULT_COMPRESSION);
+        delete[] toCompress;
+
+        if (error != Z_OK || compressLength <= 0)
+        {
+            delete[] compressBuffer;
+            g_Log.EventError("Compress failed for controls, using standard packet.\n");
+            writeStandardControls(controls, texts);
+            return;
         }
 
-		char* toCompress = new char[controlLength];
-		uint controlLengthCurrent = 0;
-		for (CSString const& ctrl : *controls)
-        {
-            const uint uiAvailableLength = std::max(0u, controlLength - controlLengthCurrent);
-            const int iJustWrittenLength = snprintf(&toCompress[controlLengthCurrent], uiAvailableLength, "{%s}", ctrl.GetBuffer());
-            controlLengthCurrent += iJustWrittenLength;
-        }
-		++ controlLengthCurrent;
-
-		ASSERT(controlLengthCurrent == controlLength);
-
-		zlib::uLong compressLength = zlib::compressBound(controlLengthCurrent);
-		byte* compressBuffer = new byte[compressLength];
-
-		int error = zlib::compress2(compressBuffer, &compressLength, (byte*)toCompress, controlLengthCurrent, Z_DEFAULT_COMPRESSION);
-		delete[] toCompress;
-
-		if (error != Z_OK || compressLength <= 0)
-		{
-			delete[] compressBuffer;
-			g_Log.EventError("Compress failed with error %d when generating gump. Using old packet.\n", error);
-			writeStandardControls(controls, texts);
-			return;
-		}
-
-		writeInt32((dword)compressLength + 4u);
-		writeInt32(controlLengthCurrent);
-		writeData(compressBuffer, (uint)compressLength);
-
-		delete[] compressBuffer;
-	}
+        writeInt32((dword)compressLength + 4); // CLen
+        writeInt32(pos);                       // DLen
+        writeData(compressBuffer, (uint)compressLength);
+        delete[] compressBuffer;
+    }
     else
     {
         writeInt32(0);
     }
 
-    if (texts)
-	{
-		// compress and write texts
-		uint textsPosition(getPosition());
+    // --- Texts ---
+    if (texts && !texts->empty())
+    {
+        uint textsStartPos = getPosition();
+        for (auto const &txt : *texts)
+        {
+            writeInt16((word)txt.GetLength());
+            writeStringFixedNETUTF16(txt.GetBuffer(), txt.GetLength()); // big-endian UTF16
+        }
 
-		for (CSString const& txt : *texts)
-		{
-			writeInt16((word)(txt.GetLength()));
-			writeStringFixedNETUTF16(txt.GetBuffer(), txt.GetLength());
-		}
+        uint textsLength           = getPosition() - textsStartPos;
+        zlib::uLong compressLength = zlib::compressBound((zlib::uLong)textsLength);
+        byte *compressBuffer       = new byte[compressLength];
 
-		uint textsLength = getPosition() - textsPosition;
+        int error = zlib::compress2(compressBuffer, &compressLength, &m_buffer[textsStartPos], (zlib::uLong)textsLength, Z_DEFAULT_COMPRESSION);
 
-		zlib::uLong compressLength = zlib::compressBound((zlib::uLong)textsLength);
-		byte* compressBuffer = new byte[compressLength];
+        if (error != Z_OK || compressLength <= 0)
+        {
+            delete[] compressBuffer;
+            g_Log.EventError("Compress failed for texts, using standard packet.\n");
+            writeStandardControls(controls, texts);
+            return;
+        }
 
-		int error = zlib::compress2(compressBuffer, &compressLength, &m_buffer[textsPosition], (zlib::uLong)textsLength, Z_DEFAULT_COMPRESSION);
-		if (error != Z_OK || compressLength <= 0)
-		{
-			delete[] compressBuffer;
-			g_Log.EventError("Compress failed with error %d when generating gump. Using old packet.\n", error);
-			writeStandardControls(controls, texts);
-			return;
-		}
+        seek(textsStartPos);
+        writeInt32((dword)texts->size());
+        writeInt32((dword)compressLength + 4); // CTxtLen
+        writeInt32((dword)textsLength);        // DTxtLen
+        writeData(compressBuffer, compressLength);
 
-		seek(textsPosition);
-		writeInt32((dword)texts->size());
-		writeInt32(compressLength + 4);
-		writeInt32((dword)textsLength);
-		writeData(compressBuffer, compressLength);
-
-		delete[] compressBuffer;
-	}
+        delete[] compressBuffer;
+    }
+    else
+    {
+        writeInt32(0);
+    }
 }
 
 void PacketGumpDialog::writeStandardControls(std::vector<CSString> const* controls, std::vector<CSString> const* texts)
