@@ -1320,8 +1320,18 @@ int CChar::Fight_CalcDamage(const CItem * pWeapon, bool fNoRandom, bool fGetMax 
 			}
 		}
 
-		iDmgMin += iDmgMin * iDmgBonus / 100;
-		iDmgMax += iDmgMax * iDmgBonus / 100;
+        iDmgMin += (iDmgMin * iDmgBonus) / 100;
+        iDmgMax += (iDmgMax * iDmgBonus) / 100;
+
+        // If this is an actual PvP hit (not a preview), reduce the final numbers
+        CChar *pTarg = m_Fight_Targ_UID.CharFind();
+        if (!fNoRandom && m_pPlayer && pTarg && pTarg->m_pPlayer)
+        {
+            int iReducePercent = g_Cfg.m_iPvpReductionPercentage;
+
+            iDmgMin = (iDmgMin * (100 - iReducePercent)) / 100;
+            iDmgMax = (iDmgMax * (100 - iReducePercent)) / 100;
+        }
 	}
 
     if ( fNoRandom )
