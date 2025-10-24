@@ -708,7 +708,7 @@ bool CChar::Skill_MakeItem_Success()
 	else if ( pItem->IsType(IT_SCROLL) )
 	{
 		// scrolls have the skill level of the inscriber ?
-		pItem->m_itSpell.m_spelllevel = iSkillLevel;
+		//pItem->m_itSpell.m_spelllevel = iSkillLevel;
 	}
 	else if ( pItem->IsType(IT_POTION) )
 	{
