@@ -3674,14 +3674,15 @@ CItem * CChar::NPC_Shrink()
 		return nullptr;
 	}
 
-	NPC_PetClearOwners();	// Clear follower slots on pet owner
-
 	CItem * pItem = Make_Figurine(CUID(), ITEMID_NOTHING);
 	if ( !pItem )
 		return nullptr;
 
 	pItem->SetAttr(ATTR_MAGIC);
 	pItem->MoveToCheck(GetTopPoint());
+
+    NPC_PetClearOwners(); // Clear follower slots on pet owner
+
 	return pItem;
 }
 

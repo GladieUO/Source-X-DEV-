@@ -947,6 +947,11 @@ int CChar::FixWeirdness()
 	}
 	if ( IsStatFlag( STATF_RIDDEN ))
 	{
+        if (!m_pPlayer)
+        {
+            if (Skill_GetActive() != NPCACT_RIDDEN)
+                Skill_Start(NPCACT_RIDDEN); // restore ridden action before validation
+        }
 		// Move the ridden creature to the same location as it's rider.
 		if ( m_pPlayer || ! IsDisconnected())
 			StatFlag_Clear( STATF_RIDDEN );
