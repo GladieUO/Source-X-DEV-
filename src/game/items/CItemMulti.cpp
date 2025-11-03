@@ -3372,7 +3372,7 @@ CItem *CItemMulti::Multi_Create(CChar *pChar, const CItemBase * pItemDef, CPoint
                     * 3rd param is set to also update Z with any house component found in the proccess.
                     */
                     ptn.m_z = CWorldMap::GetHeightPoint2(ptn, uiBlockFlags, true);
-                    if (abs(ptn.m_z - pt.m_z) > 4)  // Difference of Z > 4? so much, stop.
+                    if (abs(ptn.m_z - pt.m_z) > 6)  // Difference of Z > 4? so much, stop.
                     {
                         pChar->SysMessageDefault(DEFMSG_ITEMUSE_MULTI_BUMP);
                         return nullptr;
