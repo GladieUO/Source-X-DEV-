@@ -557,7 +557,7 @@ void CChar::NPC_PetClearOwners()
 
 	CChar * pOwner = NPC_PetGetOwner();
 	Memory_ClearTypes(MEMORY_IPET|MEMORY_FRIEND);
-	//m_pNPC->m_bonded = 0;	// pets without owner cannot be bonded
+	m_pNPC->m_bonded = 0;	// pets without owner cannot be bonded
 
 	if ( NPC_IsVendor() )
 	{
