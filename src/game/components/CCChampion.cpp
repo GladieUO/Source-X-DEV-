@@ -580,10 +580,23 @@ void CCChampion::SetLevel(byte iLevel)
     // TODO: check and code
     // DONE
     // TODO: As the level increases, the light on the area decreases.
-    ushort iRedMonsters = iLevelMonsters / _iCandlesNextLevel;
-    ushort iWhiteMonsters = iRedMonsters / (CANDLESNEXTRED + 1);
+    // NEW: make sure values never drop to 0, so small SPAWNSMAX (like 200) still works
+    if (_iCandlesNextLevel == 0)
+        _iCandlesNextLevel = 1;
+
+    ushort iRedMonsters = (ushort)(iLevelMonsters / _iCandlesNextLevel);
+
+    // At least one "full red chunk" must always be big enough
+    if (iRedMonsters < (CANDLESNEXTRED + 1))
+        iRedMonsters = (CANDLESNEXTRED + 1);
+
+    ushort iWhiteMonsters = (ushort)(iRedMonsters / (CANDLESNEXTRED + 1));
+
+    if (iWhiteMonsters == 0)
+        iWhiteMonsters = 1;
+
+    _iSpawnsNextRed   = iRedMonsters;
     _iSpawnsNextWhite = iWhiteMonsters;
-    _iSpawnsNextRed = iRedMonsters;
     GetLink()->SetTimeoutS(60 * 10);
 }
 
