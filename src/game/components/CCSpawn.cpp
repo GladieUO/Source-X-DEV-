@@ -132,8 +132,18 @@ const CResourceDef* CCSpawn::_FixDef()
 
     const CItem* pItem = GetLink();
     const uint uiItemUID = pItem->GetUID().GetObjUID();
+    // Detect Champion system usage (Champion altar uses CCSpawn but without SpawnID)
+    bool fChampionSpawn = (GetLink()->GetComponent(COMP_CHAMPION) != nullptr);
+
     if (!_idSpawn.IsValidUID())
     {
+        // If this CCSpawn is used by champion system, invalid spawn ID is NORMAL.
+        if (fChampionSpawn)
+        {
+            return nullptr; // silently OK
+        }
+
+        // Otherwise this is a real invalid spawner
         g_Log.EventDebug("CCSpawn::FixDef found invalid spawn (UID=0%x) with a SpawnID not set yet.\n", uiItemUID);
         return nullptr;
     }
@@ -398,9 +408,21 @@ CChar* CCSpawn::GenerateChar(CResourceIDBase rid)
     RES_TYPE iRidType = rid.GetResType();
     iRidType = rid.GetResType();
 
+// Detect champion altar usage
+    bool fChampionSpawn = (GetLink()->GetComponent(COMP_CHAMPION) != nullptr);
+
+    // RES_UNKNOWN happens when rid is empty (normal for champion until a wave spawn)
     if ((iRidType != RES_CHARDEF) && (iRidType != RES_UNKNOWN))
     {
-        g_Log.EventError("Spawner UID=0%" PRIx32 " tried to GenerateChar with invalid ResType=%d (ResourceID=0%" PRIx32 ").\n", (dword)pSpawnItem->GetUID(), (int)iRidType, rid.GetPrivateUID() );
+        // Champion altars: invalid type is NORMAL (because champion always calls GenerateChar(rid))
+        if (fChampionSpawn)
+        {
+            return nullptr; // silently ignore, champion controls spawning
+        }
+
+        // Normal spawner: real error
+        g_Log.EventError("Spawner UID=0%" PRIx32 " tried to GenerateChar with invalid ResType=%d (ResourceID=0%" PRIx32 ").\n", (dword)pSpawnItem->GetUID(),
+            (int)iRidType, rid.GetPrivateUID());
         return nullptr;
     }
 
@@ -474,13 +496,24 @@ CChar* CCSpawn::GenerateChar(CResourceIDBase rid)
 CResourceIDBase CCSpawn::GetCharRid()
 {
     ADDTOCALLSTACK("CCSpawn::GetCharRid");
+    bool fChampionSpawn = (GetLink()->GetComponent(COMP_CHAMPION) != nullptr);
     auto pSpawnItem = static_cast<const CItem*>(GetLink());
 
     CResourceIDBase rid;
     const CResourceDef* pDef = FixDef();
     if (!pDef)
     {
-        g_Log.EventError("Bad spawn point (UID=0%" PRIx32 ") is trying to generate a char/spawngroup. Invalid spawn index 0%x (ResourceID=0%" PRIx32 ").\n", (dword)pSpawnItem->GetUID(), _idSpawn.GetResIndex(), _idSpawn.GetPrivateUID());
+        // If this spawn belongs to a Champion altar, this is NORMAL.
+        // Champion system uses CCSpawn only with GenerateChar(rid),
+        // not through SpawnID definitions.
+        if (fChampionSpawn)
+        {
+            return rid; // silently return empty, no error, no AddBadSpawn
+        }
+
+        // Otherwise this IS a real error for standard spawners.
+        g_Log.EventError("Bad spawn point (UID=0%" PRIx32 ") is trying to generate a char/spawngroup. Invalid spawn index 0%x (ResourceID=0%" PRIx32 ").\n",
+            (dword)pSpawnItem->GetUID(), _idSpawn.GetResIndex(), _idSpawn.GetPrivateUID());
         AddBadSpawn();
         return rid;
     }
