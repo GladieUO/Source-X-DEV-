@@ -1737,9 +1737,10 @@ int CChar::Skill_DetectHidden( SKTRIG_TYPE stage )
 			continue;
 
 		// Check chance to reveal the target
-		int iSkillSrc = iSkill + g_Rand.GetVal(210) - 100;
-		int iSkillTarg = pChar->Skill_GetAdjusted(SKILL_HIDING) + g_Rand.GetVal(210) - 100;
-		if ( iSkillSrc < iSkillTarg )
+		//int iSkillSrc = iSkill + g_Rand.GetVal(210) - 100;
+		//int iSkillTarg = pChar->Skill_GetAdjusted(SKILL_HIDING) + g_Rand.GetVal(210) - 100;
+		//if ( iSkillSrc < iSkillTarg )
+        if (g_Rand.GetVal(100) < 25) // 0–24 = fail
 			continue;
 
 		pChar->Reveal();
