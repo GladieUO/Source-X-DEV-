@@ -4094,3 +4094,6 @@ When setting a property like MORE to the a spell or skill defname, trying to rea
 4-12-2025, Nolok
 - Fixed: Malformed spell flags being returned via scripts.
 - Fixed: REGION ISEVENT didn't (always?) find REGIONTYPES.
+
+25-11-2025, canerksk
+- Fixed: Fixed the issue where some items (hair, beard, etc.) were counted as items inside the corpse (Issue #1189).
