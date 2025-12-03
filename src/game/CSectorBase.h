@@ -16,14 +16,13 @@ class CItem;
 class CSector;
 class CTeleport;
 
-class CSectorObjCont
+struct CSectorObjCont
 {
     // Marker class, consider it as a "tag".
 };
 
-class CCharsDisconnectList : public CSObjCont, public CSectorObjCont
+struct CCharsDisconnectList : public CSObjCont, public CSectorObjCont
 {
-public:
 	CCharsDisconnectList();
     virtual ~CCharsDisconnectList();
 	CCharsDisconnectList(const CCharsDisconnectList& copy) = delete;
@@ -32,7 +31,7 @@ public:
 	void AddCharDisconnected(CChar* pChar);
 };
 
-class CCharsActiveList : public CSObjCont, public CSectorObjCont
+struct CCharsActiveList : public CSObjCont, public CSectorObjCont
 {
 private:
 	int m_iClients;				// How many clients in this sector now?
@@ -59,8 +58,10 @@ public:
 	}
 };
 
-class CItemsList : public CSObjCont, public CSectorObjCont
+struct CItemsList : public CSObjCont, public CSectorObjCont
 {
+	static bool sm_fNotAMove;	// hack flag to prevent items from bouncing around too much.
+
 public:
 	CItemsList() = default;
 	CItemsList(const CItemsList& copy) = delete;
@@ -114,7 +115,7 @@ public:
 
 	CCharsActiveList		m_Chars_Active;		// CChar(s) activte in this CSector.
 	CCharsDisconnectList	m_Chars_Disconnect;	// dead NPCs, etc
-    CItemsList m_Items;                         // CItem(s) in this CSector (not relevant if they have a timer set or not).
+	CItemsList m_Items;				// CItem(s) in this CSector (not relevant if they have a timer set or not).
 
 public:
     /*

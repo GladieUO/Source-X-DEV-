@@ -489,14 +489,13 @@ void CServer::SetExitFlag(int iFlag) noexcept
 
 bool CServer::IsStartupLoadingScripts() const noexcept
 {
-    const ServMode sm = GetServerMode();
-    return (sm >= ServMode::StartupLoadingScripts) && (sm < ServMode::ResyncLoad);
+    return (GetServerMode() > ServMode::StartupLoadingScripts);
 }
 
 /*
 bool CServer::IsStartupLoadingSaves() const noexcept
 {
-    return (GetServerMode() == ServMode::StartupLoadingSaves);
+    return (GetServerMode() > ServMode::StartupLoadingSaves);
 }
 */
 

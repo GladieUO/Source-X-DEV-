@@ -406,16 +406,14 @@ CVarDefContNum* CVarDefMap::SetNum( lpctstr pszName, int64 iVal, bool fDeleteZer
 		return SetNumNew( pszName, iVal );
 
 	CVarDefContNum * pVarNum = dynamic_cast <CVarDefContNum *>( pVarBase );
-    const bool fResync = g_Serv.IsResyncing();
-    bool fShouldWarn = fWarnOverwrite && g_Serv.IsStartupLoadingScripts();
-    if ( pVarNum )
+    const bool fShouldWarn = fWarnOverwrite && g_Serv.IsStartupLoadingScripts();
+	if ( pVarNum )
     {
-        const int64 iOldVal = pVarNum->GetValNum();
-        fShouldWarn = fShouldWarn || (fWarnOverwrite && fResync && (iVal != iOldVal));
         if ( fShouldWarn )
         {
             g_Log.EventWarn( "Replacing existing VarNum '%s' with number: 0%" PRIx64 " (%" PRId64 ")\n", pVarBase->GetKey(), iVal, iVal );
 #ifdef _DEBUG
+            const int64 iOldVal = pVarNum->GetValNum();
             g_Log.EventDebug("Previous value: %0" PRIx64 "(%" PRId64 ")\n", iOldVal, iOldVal);
 #endif
         }
@@ -423,7 +421,6 @@ CVarDefContNum* CVarDefMap::SetNum( lpctstr pszName, int64 iVal, bool fDeleteZer
     }
 	else
 	{
-        fShouldWarn = fShouldWarn || (fWarnOverwrite && fResync);
         if ( fShouldWarn )
         {
             g_Log.EventWarn( "Replacing existing VarStr '%s' with number: 0%" PRIx64" (%" PRId64 ")\n", pVarBase->GetKey(), iVal, iVal );
@@ -467,7 +464,7 @@ CVarDefContStr* CVarDefMap::SetStrOverride( lpctstr ptcKey, lpctstr pszVal )
 	return SetStrNew(ptcKey,pszVal);
 }
 
-CVarDefCont* CVarDefMap::SetStr( lpctstr pszName, bool fQuoted, lpctstr ptcVal, bool fDeleteZero, bool fWarnOverwrite )
+CVarDefCont* CVarDefMap::SetStr( lpctstr pszName, bool fQuoted, lpctstr pszVal, bool fDeleteZero, bool fWarnOverwrite )
 {
 	ADDTOCALLSTACK_DEBUG("CVarDefMap::SetStr");
 	// ASSUME: This has been clipped of unwanted beginning and trailing spaces.
@@ -475,20 +472,20 @@ CVarDefCont* CVarDefMap::SetStr( lpctstr pszName, bool fQuoted, lpctstr ptcVal, 
 	if ( !pszName[0] )
 		return nullptr;
 
-    ASSERT(ptcVal);
+    ASSERT(pszVal);
 	if (!fQuoted)
 	{
-        if (ptcVal[0] == '\0')
+		if (pszVal[0] == '\0')
 		{
 			// If Val is an empty string, remove any previous def (and do not add a new def)
 			DeleteAtKey(pszName);
 			return nullptr;
 		}
 
-        if (IsSimpleNumberString(ptcVal))
+		if (IsSimpleNumberString(pszVal))
 		{
 			// Just store the number and not the string.
-            return SetNum(pszName, Exp_Get64Val(ptcVal), fDeleteZero, fWarnOverwrite);
+			return SetNum(pszName, Exp_Get64Val(pszVal), fDeleteZero, fWarnOverwrite);
 		}
 	}
 
@@ -499,37 +496,32 @@ CVarDefCont* CVarDefMap::SetStr( lpctstr pszName, bool fQuoted, lpctstr ptcVal, 
 		pVarBase = m_Container[idx];
 
 	if ( !pVarBase )
-        return SetStrNew( pszName, ptcVal );
+		return SetStrNew( pszName, pszVal );
 
 	CVarDefContStr * pVarStr = dynamic_cast <CVarDefContStr *>( pVarBase );
-    const bool fResync = g_Serv.IsResyncing();
-    bool fShouldWarn = fWarnOverwrite && g_Serv.IsStartupLoadingScripts();
-    if ( pVarStr )
+	if ( pVarStr )
     {
-        lpctstr ptcOldVal = pVarStr->GetValStr();
-        fShouldWarn = fShouldWarn || (fWarnOverwrite && fResync && (0 != strncmp(ptcVal, ptcOldVal, SCRIPT_MAX_LINE_LEN)));
-        if ( fShouldWarn )
+        if ( fWarnOverwrite && !g_Serv.IsResyncing() && g_Serv.IsLoadingGeneric() )
         {
-            g_Log.EventWarn( "Replacing existing VarStr '%s' with string: '%s'\n", pVarBase->GetKey(), ptcVal );
+            g_Log.EventWarn( "Replacing existing VarStr '%s' with string: '%s'\n", pVarBase->GetKey(), pszVal );
 #ifdef _DEBUG
-            g_Log.EventDebug("Previous value: '%s'\n", ptcOldVal);
+            g_Log.EventDebug("Previous value: '%s'\n", pVarStr->GetValStr());
 #endif
         }
-        pVarStr->SetValStr( ptcVal );
+        pVarStr->SetValStr( pszVal );
     }
 	else
 	{
-        fShouldWarn = fShouldWarn || (fWarnOverwrite && fResync);
-        if ( fShouldWarn )
+		if ( fWarnOverwrite && !g_Serv.IsResyncing() && g_Serv.IsLoadingGeneric() )
         {
-            g_Log.EventWarn( "Replacing existing VarNum '%s' with string: '%s'\n", pVarBase->GetKey(), ptcVal );
+			g_Log.EventWarn( "Replacing existing VarNum '%s' with string: '%s'\n", pVarBase->GetKey(), pszVal );
 #ifdef _DEBUG
             const int64 iOldVal = pVarStr->GetValNum();
             g_Log.EventDebug("Previous value: 0%" PRIx64 " (%" PRId64 ")\n", iOldVal, iOldVal);
 
 #endif
         }
-        return SetStrOverride( pszName, ptcVal );
+        return SetStrOverride( pszName, pszVal );
 	}
 	return pVarStr;
 }
