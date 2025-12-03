@@ -923,8 +923,13 @@ protected:
      */
     virtual void OnTickStatusUpdate();
 
+    virtual bool _TickableStateBase() const override;
+    //virtual bool  TickableStateBase() const override;   // Not needed: the right virtual is called by CTimedObj::_CanTick.
+
+    std::optional<bool> _TickableStateOverride() const;
+
 public:
-    virtual bool _CanTick(bool fParentGoingToSleep) const;
+    bool _CanTick(bool fParentGoingToSleep = false) const;
 
     /**
      * @fn  PacketPropertyList* CObjBase::GetPropertyList(void) const

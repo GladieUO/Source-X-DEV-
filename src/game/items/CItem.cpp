@@ -6158,9 +6158,9 @@ bool CItem::_CanHoldTimer() const
 	return true;
 }
 
-bool CItem::_CanTick(bool fParentGoingToSleep) const
+bool CItem::_TickableStateBase() const
 {
-    //ADDTOCALLSTACK_DEBUG("CItem::_CanTick");
+    //ADDTOCALLSTACK_DEBUG("CItem::_TickableStateBase");
     EXC_TRY("Able to tick?");
 
 	const CObjBase* pCont = GetContainer();
@@ -6169,18 +6169,17 @@ bool CItem::_CanTick(bool fParentGoingToSleep) const
     if (fCharCont && fAllowContained)
 	{
         auto pCharCont = static_cast<const CChar*>(pCont);
-        if (!pCharCont->_CanTick(fParentGoingToSleep))
+        if (!pCharCont->_CanTick())
             return false;
     }
 
     if (!pCont && IsAttr(ATTR_DECAY))
     {
         // If pCont is not a CObjBase, it will most probably be a CSector. Decaying items won't go to sleep.
-        ASSERT(dynamic_cast<const CSector*>(pCont));
-        return false;
+        return CObjBase::_TickableStateBase();
     }
 
-    return CObjBase::_CanTick(fParentGoingToSleep);
+    return CObjBase::_TickableStateBase();
 
 	EXC_CATCH;
 

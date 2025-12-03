@@ -414,8 +414,6 @@ bool CWorldTicker::AddTimedObject(const int64 iTimeout, CTimedObject* pTimedObje
     //if (iTimeout < CWorldGameTime::GetCurrentTime().GetTimeRaw())    // We do that to get them tick as sooner as possible; don't uncomment.
     //    return;
 
-    UnreferencedParameter(fForce);
-
     EXC_TRY("AddTimedObject");
     ASSERT(pTimedObject);
     const ProfileTask timersTask(PROFILE_TIMERS);
@@ -437,10 +435,15 @@ bool CWorldTicker::AddTimedObject(const int64 iTimeout, CTimedObject* pTimedObje
     }
 
     EXC_SET_BLOCK("Insert");
-    const bool fRet = _InsertTimedObject(iTimeout, pTimedObject);
-    ASSERT(fRet);
+    bool fCanTick = fForce ? true : pTimedObject->_TickableStateBase();
+    if (fCanTick)
+    {
+        const bool fRet = _InsertTimedObject(iTimeout, pTimedObject);
+        ASSERT(fRet);
+        fCanTick = fRet;
+    }
 
-    return fRet;
+    return fCanTick;
 
     EXC_CATCH;
     return false;
@@ -1070,7 +1073,7 @@ void CWorldTicker::ProcessTimedObjects()
                 ++it, ++uiProgressive)
             {
                 CTimedObject* pTimedObj = it->second;
-                if (!pTimedObj->_IsTimerSet() || pTimedObj->_IsSleeping())
+                if (!pTimedObj->_IsTimerSet() || !pTimedObj->_TickableStateBase())
                     continue;
 
                 //if (pTimedObj->_GetTimeoutRaw() > _iCurTickStartTime)
@@ -1313,7 +1316,7 @@ void CWorldTicker::ProcessCharPeriodicTicks()
             {
                 ASSERT(it->first != 0);
                 CChar* pChar = it->second;
-                if (pChar->_IsSleeping() || pChar->_IsBeingDeleted())
+                if (!pChar->_TickableStateBase() || pChar->_IsBeingDeleted())
                     continue;
 
                 _vPeriodicCharsTicksBuffer.emplace_back(pChar);

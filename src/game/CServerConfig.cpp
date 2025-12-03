@@ -3437,7 +3437,7 @@ bool CServerConfig::LoadResourceSection( CScript * pScript, bool fInsertSorted )
 			}
 			else
 			{
-                g_ExprGlobals.mtEngineLockedWriter()->m_VarDefs.SetStr(ptcKey, false, pScript->GetArgStr(), false, true);
+                g_ExprGlobals.mtEngineLockedWriter()->m_VarDefs.SetStr(ptcKey, false, pScript->GetArgStr(), false);
 			}
 		}
 
@@ -3450,7 +3450,7 @@ bool CServerConfig::LoadResourceSection( CScript * pScript, bool fInsertSorted )
 		while (pScript->ReadKeyParse())
 		{
 			const lpctstr ptcKey = pScript->GetKey();
-            gwrite->m_VarResDefs.SetStr(ptcKey, false, pScript->GetArgStr(), false, true);
+            gwrite->m_VarResDefs.SetStr(ptcKey, false, pScript->GetArgStr(), false);
 		}
 		return true;
     }
@@ -4102,7 +4102,7 @@ bool CServerConfig::LoadResourceSection( CScript * pScript, bool fInsertSorted )
 				ptcKey = ptcKey + 4;
 
             lpctstr ptcArg = pScript->GetArgStr( &fQuoted );
-            g_ExprGlobals.mtEngineLockedWriter()->m_VarGlobals.SetStr( ptcKey, fQuoted, ptcArg, false, true );
+            g_ExprGlobals.mtEngineLockedWriter()->m_VarGlobals.SetStr( ptcKey, fQuoted, ptcArg );
 		}
 		return true;
 	case RES_WORLDLISTS:
@@ -4614,7 +4614,7 @@ CResourceID CServerConfig::ResourceGetNewID( RES_TYPE restype, lpctstr pszName, 
 
 	if ( pszName )
 	{
-        CVarDefContNum* pVarTemp = g_ExprGlobals.mtEngineLockedWriter()->m_VarResDefs.SetNum( pszName, rid.GetPrivateUID(), true, true );
+        CVarDefContNum* pVarTemp = g_ExprGlobals.mtEngineLockedWriter()->m_VarResDefs.SetNum( pszName, rid.GetPrivateUID() );
         ASSERT(pVarTemp);
 		*ppVarNum = pVarTemp;
 	}

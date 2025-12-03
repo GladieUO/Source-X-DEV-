@@ -155,10 +155,10 @@ public:
 	lpctstr FindValStr( lpctstr pVal ) const;
 
     CVarDefContNum* SetNumNew( lpctstr ptcKey, int64 iVal );
-    CVarDefContNum* SetNum( lpctstr ptcKey, int64 iVal, bool fDeleteZero = true, bool fWarnOverwrite = false );
+    CVarDefContNum* SetNum( lpctstr ptcKey, int64 iVal, bool fDeleteZero = true, bool fWarnOverwrite = true );
     CVarDefContNum* ModNum( lpctstr ptcKey, int64 iMod, bool fDeleteZero = true);
     CVarDefContStr* SetStrNew( lpctstr ptcKey, lpctstr pszVal );
-    CVarDefCont* SetStr(lpctstr ptcKey, bool fQuoted, lpctstr ptcVal, bool fDeleteZero = true, bool fWarnOverwrite = false );
+    CVarDefCont* SetStr(lpctstr ptcKey, bool fQuoted, lpctstr ptcVal, bool fDeleteZero = true, bool fWarnOverwrite = true );
 
 	CVarDefCont * GetAt( size_t at ) const;
 	CVarDefCont * GetKey( lpctstr ptcKey ) const;

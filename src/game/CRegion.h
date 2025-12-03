@@ -87,14 +87,14 @@ public:
 		return m_BaseDefs.GetKeyNum( ptcKey );
 	}
 
-    void SetDefNum(lpctstr ptcKey, int64 iVal, bool fZero = true, bool fWarnOverwrite = false)
+	void SetDefNum(lpctstr ptcKey, int64 iVal, bool fZero = true)
 	{
-        m_BaseDefs.SetNum(ptcKey, iVal, fZero, fWarnOverwrite);
+		m_BaseDefs.SetNum(ptcKey, iVal, fZero);
 	}
 
-    void SetDefStr(lpctstr ptcKey, lpctstr pszVal, bool fQuoted = false, bool fZero = true, bool fWarnOverwrite = false)
+	void SetDefStr(lpctstr ptcKey, lpctstr pszVal, bool fQuoted = false, bool fZero = true)
 	{
-        m_BaseDefs.SetStr(ptcKey, fQuoted, pszVal, fZero, fWarnOverwrite);
+		m_BaseDefs.SetStr(ptcKey, fQuoted, pszVal, fZero);
 	}
 
 	void DeleteDef(lpctstr ptcKey)
