@@ -4429,6 +4429,12 @@ CChar::DeathRequestResult CChar::Death()
             OnTrigger(CTRIG_DeathCorpse, pScriptArgs, this);
 		}
 	}
+    /*
+    else
+    {
+        // TODO: add a error msg?
+    }
+    */
 	m_lastAttackers.clear();	// clear list of attackers
 
 	// Play death animation (fall on ground)
