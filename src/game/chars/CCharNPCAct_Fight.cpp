@@ -135,8 +135,9 @@ CChar * CChar::NPC_FightFindBestTarget(const std::vector<CChar*>* pvExcludeList)
                 ++i;
                 continue;
             }
-
-            if ((NPC_GetAiFlags() & NPC_AI_THREAT) && (threat < refAttacker.threat))	// this char has more threat than others, let's switch to this target
+            const int THREAT_SWITCH_THRESHOLD = 200; // switch target only if the new target has at least X more threat than the current one
+            if ((NPC_GetAiFlags() & NPC_AI_THREAT) &&
+                (refAttacker.threat > threat + THREAT_SWITCH_THRESHOLD)) // this char has more threat than others, let's switch to this target
             {
                 pClosest = pChar;
                 iClosest = iDist;
@@ -149,7 +150,8 @@ CChar * CChar::NPC_FightFindBestTarget(const std::vector<CChar*>* pvExcludeList)
             }
             ++i;
         }
-        return pClosest ? pClosest : pChar;
+        if (pClosest)
+            return pClosest;
     }
 
     // New target not found, return the current target, if any

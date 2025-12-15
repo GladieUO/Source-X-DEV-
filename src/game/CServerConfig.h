@@ -616,6 +616,7 @@ public:
     bool    m_fDecimalVariables;     //Variables like TAGs, LOCALs returns as decimal (10 base) instead of Hex.
 
     int     m_iPvpReductionPercentage;   // Percentage of damage reduction when both attacker and defender are players.
+    int     m_iPvpReductionPercentageSpell;   // Percentage of damage spell reduction when both attacker and defender are players.
 	// End INI file options.
 
 	CResourceScript m_scpIni;       // Keep this around so we can link to it.

@@ -1425,8 +1425,6 @@ bool CChar::Fight_Attack( CChar *pCharTarg, bool fToldByMaster )
 	}
 	else if ( m_pNPC && !CanSee(pCharTarg) )
 	{
-		Attacker_Delete(pCharTarg, true, ATTACKER_CLEAR_DISTANCE);
-		Skill_Start(SKILL_NONE);
 		return false;
 	}
 
@@ -1493,6 +1491,14 @@ bool CChar::Fight_Attack( CChar *pCharTarg, bool fToldByMaster )
     }
 
 	m_Fight_Targ_UID = pTarget ? pTarget->GetUID() : CUID();
+    // Prevent pets from breaking "follow me"
+    if (m_pNPC && IsStatFlag(STATF_PET))
+    {
+        if (!fToldByMaster && Skill_GetActive() == NPCACT_FOLLOW_TARG)
+        {
+            return false; // stay in follow mode
+        }
+    }
 	Skill_Start(skillWeapon);
 	return true;
 }

@@ -3676,11 +3676,18 @@ bool CChar::OnSpellEffect( SPELL_TYPE spell, CChar * pCharSrc, int iSkillLevel, 
         {
             // Evaluating Intelligence mult
             iEffect *= ((pCharSrc->Skill_GetBase(SKILL_EVALINT) * 3) / 1000) + 1;
+            if (m_pPlayer && pCharSrc->m_pPlayer)
+            {
+                int pvpPercent = g_Cfg.m_iPvpReductionPercentageSpell; // e.g. 50
+                pvpPercent = minimum(maximum(pvpPercent, 0), 100);
+
+                iEffect = (iEffect * pvpPercent) / 100;
+            }
 
             // Spell Damage Increase bonus
             int DamageBonus = (int)(pCharSrc->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASESPELLDAM, true));
-            if (m_pPlayer && pCharSrc->m_pPlayer && DamageBonus > 15)		// Spell Damage Increase is capped at 15% on PvP
-                DamageBonus = 15;
+            if (m_pPlayer && pCharSrc->m_pPlayer && DamageBonus > 70)		// Spell Damage Increase is capped at 15% on PvP
+                DamageBonus = 70;
 
             // INT bonus
             DamageBonus += pCharSrc->Stat_GetAdjusted(STAT_INT) / 10;

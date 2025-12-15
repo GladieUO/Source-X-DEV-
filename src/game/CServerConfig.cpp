@@ -67,6 +67,7 @@ CServerConfig::CServerConfig()
 	m_fMd5Passwords			= false;
     m_fDecimalVariables     = false; // In default, variables should return hexadecimal.
     m_iPvpReductionPercentage = 0;
+    m_iPvpReductionPercentageSpell = 0;
 
 	//Magic
 	m_fManaLossAbort		= false;
@@ -678,6 +679,7 @@ enum RC_TYPE
 	RC_PLAYERNEUTRAL,			// m_iPlayerKarmaNeutral
 	RC_PROFILE,
     RC_PVPREDUCTIONPERCENTAGE,    // m_iPvpReductionPercentage
+    RC_PVPREDUCTIONPERCENTAGESPELL,    // m_iPvpReductionPercentage
 	RC_RACIALFLAGS,				// m_iRacialFlags
 	RC_REAGENTLOSSABORT,		// m_fReagentLossAbort
 	RC_REAGENTLOSSFAIL,			// m_fReagentLossFail
@@ -974,6 +976,7 @@ const CAssocReg CServerConfig::sm_szLoadKeys[RC_QTY + 1]
 	{ "PLAYERNEUTRAL",			{ ELEM_INT,		static_cast<uint>OFFSETOF(CServerConfig,m_iPlayerKarmaNeutral)	}},
 	{ "PROFILE",				{ ELEM_VOID,	0												}},
     { "PVPREDUCTIONPERCENTAGE", { ELEM_INT,     static_cast<uint> OFFSETOF(CServerConfig,m_iPvpReductionPercentage) }},
+    { "PVPREDUCTIONPERCENTAGESPELL", { ELEM_INT, static_cast<uint> OFFSETOF(CServerConfig, m_iPvpReductionPercentageSpell) } },
 	{ "RACIALFLAGS",			{ ELEM_MASK_INT,static_cast<uint>OFFSETOF(CServerConfig,m_iRacialFlags)			}},
 	{ "REAGENTLOSSABORT",		{ ELEM_BOOL,	static_cast<uint>OFFSETOF(CServerConfig,m_fReagentLossAbort)		}},
 	{ "REAGENTLOSSFAIL",		{ ELEM_BOOL,	static_cast<uint>OFFSETOF(CServerConfig,m_fReagentLossFail)		}},
