@@ -152,7 +152,7 @@ public:
     bool SetGroup (Group faction) noexcept;
     Species GetSpecies() const noexcept;
     bool SetSpecies(Species species) noexcept;
-
+    void Clear() noexcept;
         /*
         Checks my group and the target's one and return true if we are enemies.
     */

@@ -12,6 +12,11 @@ CFactionDef::CFactionDef() noexcept :
 {
 }
 
+void CFactionDef::Clear() noexcept
+{
+    _uiFactionData = 0;
+}
+
 bool CFactionDef::IsNone() const noexcept
 {
     return (!_uiFactionData || (GetGroup() == Group::NONE) || (GetSpecies() == Species::NONE));

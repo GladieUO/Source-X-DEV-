@@ -124,41 +124,58 @@ bool CCPropsItemEquippable::GetPropertyStrPtr(PropertyIndex_t iPropIndex, CSStri
     return BaseCont_GetPropertyStr(&_mPropsStr, iPropIndex, psOutVal, fZero);
 }
 
-bool CCPropsItemEquippable::SetPropertyNum(PropertyIndex_t iPropIndex, PropertyValNum_t iVal, CObjBase* pLinkedObj, RESDISPLAY_VERSION iLimitToExpansion, bool fDeleteZero)
+bool CCPropsItemEquippable::SetPropertyNum(
+    PropertyIndex_t iPropIndex, PropertyValNum_t iVal, CObjBase *pLinkedObj, RESDISPLAY_VERSION iLimitToExpansion, bool fDeleteZero)
 {
     ADDTOCALLSTACK("CCPropsItemEquippable::SetPropertyNum");
     ASSERT(!IsPropertyStr(iPropIndex));
     ASSERT((iLimitToExpansion >= RDS_PRET2A) && (iLimitToExpansion < RDS_QTY));
 
-    if ((fDeleteZero && (iVal == 0)) || (_iPropertyExpansion[iPropIndex] > iLimitToExpansion) /*|| IgnoreElementalProperty(iPropIndex)*/)
+    // ============================
+    // SPECIAL CASE: SLAYER PROPS
+    // ============================
+    if (iPropIndex == PROPIEQUIP_SLAYER_GROUP)
     {
-        if (0 == _mPropsNum.erase(iPropIndex))
-            return true; // I didn't have this property, so avoid further processing.
-    }
+        if (iVal == 0)
+            _faction.Clear(); // remove slayer
+        else
+            _faction.SetGroup(enum_alias_cast<CFactionDef::Group>((uint32)iVal));
 
-    else if (iPropIndex == PROPIEQUIP_SLAYER_GROUP)
-    {
-        _faction.SetGroup(enum_alias_cast<CFactionDef::Group>((uint32)iVal));
-        return true;
+        if (pLinkedObj)
+            pLinkedObj->UpdatePropertyFlag();
+
+        return true; // STOP here, do NOT fall into generic code
     }
     else if (iPropIndex == PROPIEQUIP_SLAYER_SPECIES)
     {
-        _faction.SetSpecies(enum_alias_cast<CFactionDef::Species>((uint32)iVal));
+        if (iVal == 0)
+            _faction.Clear();
+        else
+            _faction.SetSpecies(enum_alias_cast<CFactionDef::Species>((uint32)iVal));
+
+        if (pLinkedObj)
+            pLinkedObj->UpdatePropertyFlag();
+
         return true;
     }
 
+    // ============================
+    // GENERIC HANDLING (unchanged)
+    // ============================
+    if ((fDeleteZero && (iVal == 0)) || (_iPropertyExpansion[iPropIndex] > iLimitToExpansion))
+    {
+        if (0 == _mPropsNum.erase(iPropIndex))
+            return true;
+    }
     else
     {
         _mPropsNum[iPropIndex] = iVal;
-        //_mPropsNum.container.shrink_to_fit();
     }
 
     if (!pLinkedObj)
         return true;
 
-    // Do stuff to the pLinkedObj
     pLinkedObj->UpdatePropertyFlag();
-
     return true;
 }
 
