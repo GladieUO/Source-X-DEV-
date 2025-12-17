@@ -3651,6 +3651,8 @@ CItem * CChar::Make_Figurine(const CUID uidOwner, ITEMID_TYPE id )
 	pItem->m_itFigurine.m_ID = GetID();	// Base type of creature. (More1 of i_memory)
 	pItem->m_itFigurine.m_UID = GetUID();
 	pItem->m_uidLink = uidOwner;
+    if (m_pNPC && m_pNPC->m_bonded)
+        pItem->SetAttr(ATTR_NEWBIE);
 
     if (pDynamicVarFollowerSlots)
         pItem->m_TagDefs.SetNum("FOLLOWERSLOTS", pDynamicVarFollowerSlots->GetValNum(), false, false);
