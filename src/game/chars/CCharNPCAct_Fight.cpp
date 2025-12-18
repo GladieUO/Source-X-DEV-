@@ -43,6 +43,12 @@ bool CChar::NPC_FightArchery(CChar * pChar)
     if (iDist > iMaxDist)	// way too far away . close in.
         return false;
 
+    if (!CanSeeLOS(pChar))
+        {
+            NPC_Act_Follow(false, iMinDist, true);
+            return true;
+        }
+
     if (iDist > iMinDist)
         return true;		// always use archery if distant enough
 
