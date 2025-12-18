@@ -557,7 +557,22 @@ size_t CContainer::ResourceConsumePart( const CResourceQtyArray *pResources, int
 		int iQtyTotal = (iResQty * iReplicationQty);
 		if ( iQtyTotal <= 0 )
 			continue;
-		iQtyTotal = IMulDiv(iQtyTotal, iDamagePercent, 100);
+
+        CChar *pChar = dynamic_cast<CChar *>(this);
+        bool fIsInscription = pChar && pChar->Skill_GetActive() == SKILL_INSCRIPTION;
+        int iBaseTotal = iResQty * iReplicationQty;
+        if (fIsInscription && iBaseTotal == 1)
+        {
+            if (g_Rand.GetVal(100) < iDamagePercent)
+                iQtyTotal = 1;
+            else
+                iQtyTotal = 0;
+        }
+        else
+        {
+            iQtyTotal = IMulDiv(iBaseTotal, iDamagePercent, 100);
+        }
+
 		if ( iQtyTotal <= 0 )
 			continue;
 
