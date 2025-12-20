@@ -3670,6 +3670,10 @@ CItem * CChar::Make_Figurine(const CUID uidOwner, ITEMID_TYPE id )
 
     SetDisconnected();
 
+    StatFlag_Set(STATF_RIDDEN);
+    Skill_Start(NPCACT_RIDDEN);
+    m_atRidden.m_uidFigurine = pItem->GetUID();
+
 	return pItem;
 }
 
