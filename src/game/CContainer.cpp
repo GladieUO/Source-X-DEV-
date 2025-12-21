@@ -560,23 +560,58 @@ size_t CContainer::ResourceConsumePart( const CResourceQtyArray *pResources, int
 
         CChar *pChar = dynamic_cast<CChar *>(this);
         bool fIsInscription = pChar && pChar->Skill_GetActive() == SKILL_INSCRIPTION;
+
         int iBaseTotal = iResQty * iReplicationQty;
+
+        // --- detect always-consume resources (reagent / blank scroll) ---
+        bool fAlwaysConsume = false;
+
+        const CResourceID rid    = (*pResources)[i].GetResourceID();
+        const CItemBase *pItemDef = nullptr;
+
+        if (rid.GetResType() == RES_ITEMDEF)
+        {
+            pItemDef = CItemBase::FindItemBase((ITEMID_TYPE)rid.GetResIndex());
+
+            if (pItemDef)
+            {
+                // Reagents
+                if (pItemDef->GetType() == IT_REAGENT)
+                    fAlwaysConsume = true;
+
+                // Blank scroll
+                if (pItemDef->GetType() == IT_SCROLL_BLANK)
+                    fAlwaysConsume = true;
+            }
+        }
+
+        // --- ORIGINAL behavior, with forced consume exception ---
         if (fIsInscription && iBaseTotal == 1)
         {
-            if (g_Rand.GetVal(100) < iDamagePercent)
+            if (fAlwaysConsume)
+            {
+                // Always eat reagent / blank scroll
                 iQtyTotal = 1;
+            }
             else
-                iQtyTotal = 0;
+            {
+                // Original random behavior
+                if (g_Rand.GetVal(100) < iDamagePercent)
+                    iQtyTotal = 1;
+                else
+                    iQtyTotal = 0;
+            }
         }
         else
         {
+            // Original Sphere behavior
             iQtyTotal = IMulDiv(iBaseTotal, iDamagePercent, 100);
         }
 
 		if ( iQtyTotal <= 0 )
 			continue;
 
-		const CResourceID rid = (*pResources)[i].GetResourceID();
+		//const CResourceID rid = (*pResources)[i].GetResourceID();
 		int iRet = fTest ? ContentConsumeTest(rid, iQtyTotal, dwArg) : ContentConsume(rid, iQtyTotal, dwArg);
 		if ( iRet )
 			iMissing = i;
