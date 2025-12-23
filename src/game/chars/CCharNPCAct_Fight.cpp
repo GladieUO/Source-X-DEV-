@@ -10,6 +10,8 @@
 #include "../triggers.h"
 #include "CChar.h"
 #include "CCharNPC.h"
+#include "../items/CItem.h"
+#include "../items/CItemBase.h"
 
 //////////////////////////
 // CChar
@@ -27,21 +29,31 @@ bool CChar::NPC_FightArchery(CChar * pChar)
 
     // determine how far we can shoot with this bow
     CItem *pWeapon = m_uidWeapon.ItemFind();
-    if (pWeapon != nullptr)
+    if (pWeapon)
     {
-        iMinDist = GetRangeL();
-        iMaxDist = GetRangeH();
+        const CItemBase *pDef = pWeapon->Item_GetDef();
+        if (pDef)
+        {
+            iMinDist = pDef->GetRangeL(); // may be 0 (valid)
+            iMaxDist = pDef->GetRangeH(); // MUST be >1 for bows
+        }
     }
 
     // if range is not set on the weapon, default to ini settings
-    if (!iMaxDist || (iMinDist == 0 && iMaxDist == 1))
+    // fallback ONLY if weapon did not define MAX range
+    if (iMaxDist <= 1)
+    {
         iMaxDist = g_Cfg.m_iArcheryMaxDist;
+    }
     if (!iMinDist)
         iMinDist = g_Cfg.m_iArcheryMinDist;
 
     int iDist = GetTopDist3D(pChar);
-    if (iDist > iMaxDist)	// way too far away . close in.
-        return false;
+    if (iDist > iMaxDist)
+    {
+        NPC_Act_Follow(false, iMinDist, true);
+        return true;
+    }
 
     if (!CanSeeLOS(pChar))
         {
