@@ -372,14 +372,25 @@ void CChar::NPC_Act_Fight()
     }
 
     // Move in for melee type combat.
-    int iRange = Fight_CalcRange(m_uidWeapon.ItemFind());
-    if (!NPC_Act_Follow(false, iRange, false))
+    // Only skilled melee fighters are allowed to close in
+    if (Skill_GetBase(SKILL_TACTICS) >= 500)
     {
-        // Enemy gone?
-        m_Act_UID.InitUID();
-        _SetTimeoutD(1);
-        return;
+        int iRange = Fight_CalcRange(m_uidWeapon.ItemFind());
+        if (!NPC_Act_Follow(false, iRange, false))
+        {
+            m_Act_UID.InitUID();
+            _SetTimeoutD(1);
+            return;
+        }
     }
+    else
+    {
+        // Not a melee fighter → do NOT close in
+
+        if (iDist < 4)
+            NPC_Act_Follow(false, 6, true); // back off slightly
+    }
+
     if (!_IsTimerSet()) // Nothing could be done, tick again in a while
     {
         NPC_LookAround();
