@@ -79,6 +79,17 @@ CChar * CChar::NPC_FightFindBestTarget(const std::vector<CChar*>* pvExcludeList)
 {
     ADDTOCALLSTACK("CChar::NPC_FightFindBestTarget");
     ASSERT(m_pNPC);
+
+        // === PET TARGET LOCK ===
+    // Pets must NOT auto-switch targets using threat logic
+    if (IsStatFlag(STATF_PET))
+    {
+        CChar *pTarget = m_Fight_Targ_UID.CharFind();
+        if (pTarget && pTarget->Fight_IsAttackableState())
+            return pTarget;
+
+        return nullptr;
+    }
     // Find the best target to attack, and switch to this
     // new target even if I'm already attacking someone.
 

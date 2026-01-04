@@ -191,8 +191,20 @@ bool CChar::NPC_FightMagery(CChar * pChar)
         // back off from the target a bit
         if (uiMana > (uiStatInt / 3) && g_Rand.GetVal(uiStatInt))
         {
-            if (iDist < 4 || iDist > 8)	// Here is fine?
-                NPC_Act_Follow(false, g_Rand.GetVal(3) + 2, true);
+            const int iMinRange = 4;
+            const int iMaxRange = 8;
+
+            if (iDist < iMinRange)
+            {
+                // Too close → back off deterministically
+                NPC_Act_Follow(false, iMaxRange, true);
+            }
+            else if (iDist > iMaxRange)
+            {
+                // Too far → move closer
+                NPC_Act_Follow(true, iMinRange, true);
+            }
+            // else: distance OK → DO NOTHING
 
             return true;
         }
