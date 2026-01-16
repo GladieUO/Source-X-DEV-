@@ -4785,67 +4785,13 @@ CRegion * CChar::CanMoveWalkTo( CPointMap & ptDst, bool fCheckChars, bool fCheck
 	EXC_TRY("CanMoveWalkTo");
 	EXC_SET_BLOCK("Check Valid Move");
 
-// NPCs and pathfinding use full validation
-    if (m_pNPC || fPathFinding)
-    {
-        pArea = CheckValidMove(ptDst, &uiBlockFlags, DIR_TYPE(dir & ~DIR_MASK_RUNNING), &ClimbHeight, fPathFinding);
-
-        if (!pArea)
-        {
-            if (g_Cfg.m_iDebugFlags & DEBUGF_WALK)
-                g_Log.EventWarn("CheckValidMove failed\n");
-            return nullptr;
-        }
-    }
-    else
-    {
-        // =========================================================
-        // Players: light validation with controlled Z change
-        // =========================================================
-
-        // Must be inside a valid area/multi
-        pArea = ptDst.GetRegion(REGION_TYPE_MULTI | REGION_TYPE_AREA | REGION_TYPE_ROOM);
-        if (!pArea)
-            return nullptr;
-
-        uint64 uiTmpFlags = 0;
-        height_t tmpClimb = 0;
-
-        // Probe strict logic ONLY to resolve height / detect blockers
-        CRegion *pHeightArea = CheckValidMove(ptDst, &uiTmpFlags, DIR_TYPE(dir & ~DIR_MASK_RUNNING), &tmpClimb,
-            true // pathfinding = true (no strict rejection)
-        );
-
-        // ---------------------------------------------------------
-        // HARD BLOCK: mount ceiling must still apply
-        // ---------------------------------------------------------
-        if (IsStatFlag(STATF_ONHORSE) && g_Cfg.m_iMountHeight && !IsPriv(PRIV_GM) && !IsPriv(PRIV_ALLMOVE))
-        {
-            const height_t uiHeight = IsSetEF(EF_WalkCheckHeightMounted) ? GetHeightMount() : GetHeight();
-
-            // Re-evaluate ceiling using real blocking data
-            CServerMapBlockingState mountBlock(GetCanMoveFlags(GetCanFlags()), ptDst.m_z, ptDst.m_z + uiHeight, ptDst.m_z + 2, uiHeight);
-
-            CWorldMap::GetHeightPoint(ptDst, mountBlock, true);
-
-            // Same logic as CanStandAt()
-            if (mountBlock.m_Top.m_z <= mountBlock.m_Bottom.m_z + uiHeight)
-            {
-                SysMessageDefault(DEFMSG_MSG_MOUNT_CEILING);
-                return nullptr;
-            }
-        }
-
-        // ---------------------------------------------------------
-        // Resolve Z
-        // ---------------------------------------------------------
-        if (!pHeightArea)
-        {
-            // Doors / flat tiles: keep original Z
-            ptDst.m_z = GetTopZ();
-        }
-        // else: Z already resolved by CheckValidMove()
-    }
+	pArea = CheckValidMove(ptDst, &uiBlockFlags, DIR_TYPE(dir & ~DIR_MASK_RUNNING), &ClimbHeight, fPathFinding);
+	if ( !pArea )
+	{
+		if (g_Cfg.m_iDebugFlags & DEBUGF_WALK)
+            g_Log.EventWarn("CheckValidMove failed\n");
+		return nullptr;
+	}
 
     if (IsPriv(PRIV_GM))
     {
