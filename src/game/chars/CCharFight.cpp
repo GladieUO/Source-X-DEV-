@@ -1357,7 +1357,10 @@ void CChar::Fight_ClearAll()
 	}
 
     Attacker_Clear();
-	m_atFight.m_iWarSwingState = WAR_SWING_EQUIPPING;
+    if (!g_Cfg.IsSkillFlag(Skill_GetActive(), SKF_MAGIC) && !IsStatFlag(STATF_PET) && !IsStatFlag(STATF_RIDDEN))
+    {
+        m_atFight.m_iWarSwingState = WAR_SWING_EQUIPPING;
+    }
 	m_atFight.m_iRecoilDelay = 0;
 	m_atFight.m_iSwingAnimationDelay = 0;
 	m_atFight.m_iSwingAnimation = 0;

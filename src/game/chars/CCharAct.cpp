@@ -4796,19 +4796,19 @@ CRegion * CChar::CanMoveWalkTo( CPointMap & ptDst, bool fCheckChars, bool fCheck
                 g_Log.EventWarn("CheckValidMove failed\n");
             return nullptr;
         }
-        // -------------------------------------------------
-        // NPC safety: never step down into deep holes
-        // -------------------------------------------------
-        if (m_pNPC && !fCheckOnly)
-        {
-            const int dz = ptDst.m_z - GetTopZ();
+        //// -------------------------------------------------
+        //// NPC safety: never step down into deep holes
+        //// -------------------------------------------------
+        //if (m_pNPC && !fCheckOnly)
+        //{
+        //    const int dz = ptDst.m_z - GetTopZ();
 
-            // Absolute NPC rule: allow max 5 Z drop
-            if (dz < -5)
-            {
-                return nullptr;
-            }
-        }
+        //    // Absolute NPC rule: allow max 5 Z drop
+        //    if (dz < -5)
+        //    {
+        //        return nullptr;
+        //    }
+        //}
     }
     else
     {

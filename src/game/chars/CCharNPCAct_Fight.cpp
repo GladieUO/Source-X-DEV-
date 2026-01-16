@@ -82,13 +82,17 @@ CChar * CChar::NPC_FightFindBestTarget(const std::vector<CChar*>* pvExcludeList)
 
         // === PET TARGET LOCK ===
     // Pets must NOT auto-switch targets using threat logic
+    // === PET TARGET LOCK (no threat switching, but allow reacquire) ===
     if (IsStatFlag(STATF_PET))
     {
         CChar *pTarget = m_Fight_Targ_UID.CharFind();
-        if (pTarget && pTarget->Fight_IsAttackableState())
+
+        if (pTarget && pTarget->Fight_IsAttackableState() && CanSeeLOS(pTarget))
             return pTarget;
 
-        return nullptr;
+        // If the locked target is invalid (dead / gone / unreachable),
+        // THEN allow normal selection so the pet can recover.
+        // Do NOT return nullptr here.
     }
     // Find the best target to attack, and switch to this
     // new target even if I'm already attacking someone.
