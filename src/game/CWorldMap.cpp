@@ -1476,6 +1476,11 @@ void CWorldMap::GetHeightPoint(const CPointMap & pt, CServerMapBlockingState & b
 			CItemBase::GetItemTiledataFlags(&uiBlockThis, iDispID);
         }
 
+        if (pItem->IsType(IT_DOOR) && pItem->IsAttr(ATTR_OPENED))
+        {
+            uiBlockThis &= ~(CAN_I_BLOCK | CAN_I_DOOR | CAN_I_PLATFORM | CAN_I_ROOF);
+        }
+
         block.CheckTile_Item(uiBlockThis, z, zHeight, iDispID + (ITEMID_TYPE)TERRAIN_QTY);
 	}
 
