@@ -980,14 +980,14 @@ effect_bounce:
                             iReactiveRedDam  = (int)pHitReactiveArgs->m_VarsLocal.GetKeyNum("ReduceDamage");             // REDUCED DAMAGE VALUE
                             ReactiveDamType  = (DAMAGE_TYPE)pHitReactiveArgs->m_VarsLocal.GetKeyNum("DamageType"); // DAMAGE TYPE
                             // should it be zero ?
-                            //if (iReactiveDamage < 1)
-                            //    iReactiveDamage = 1;
+                            if (iReactiveDamage < 1)
+                                iReactiveDamage = 1;
 
-                            //if (iReactiveRedDam < 1)
-                            //    iReactiveRedDam = 1;
+                            if (iReactiveRedDam < 1)
+                                iReactiveRedDam = 1;
 
-                            //if (iReactiveRefDam < 1)
-                            //    iReactiveRefDam = 1;
+                            if (iReactiveRefDam < 1)
+                                iReactiveRefDam = 1;
                         }
 
                         // reduce
