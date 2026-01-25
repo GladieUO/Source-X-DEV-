@@ -202,7 +202,7 @@ bool CChar::NPC_FightMagery(CChar * pChar)
             else if (iDist > iMaxRange)
             {
                 // Too far → move closer
-                NPC_Act_Follow(true, iMinRange, true);
+                NPC_Act_Follow(false, iMinRange, false);
             }
             // else: distance OK → DO NOTHING
 

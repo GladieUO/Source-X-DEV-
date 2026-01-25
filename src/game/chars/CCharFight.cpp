@@ -1073,34 +1073,45 @@ void CChar::OnTakeDamageInflictArea(int iDmg, CChar* pSrc, DAMAGE_TYPE uType, in
     if (IsAosFlagEnabled(FEATURE_AOS_DAMAGE))
         iDistance=10; // 5 for ML and 10 for aos
 
+    int iBaseDmg = iDmg; // store original damage once
+
     auto AreaChars = CWorldSearchHolder::GetInstance(GetTopPoint(), iDistance);
     for (;;)
-        //pSrc = Char make the attack
-        //pChar = Char scanned on the loop iteration
-        //this = Char get the initial hit
     {
-        CChar* pChar = AreaChars->GetChar();
+        CChar *pChar = AreaChars->GetChar();
         if (!pChar)
             break;
-        if ((pChar == this) || (pChar == pSrc))                     //This char already receive the base hit. Damage already done
+        if ((pChar == this) || (pChar == pSrc))
             continue;
-        if (pChar->Fight_CanHit(pSrc,true) == WAR_SWING_INVALID)    //Check if target can be hit (I am invul, stone etc. Target is Disconnected,safe zone etc)
+        if (pChar->Fight_CanHit(pSrc, true) == WAR_SWING_INVALID)
             continue;
-        if (!pChar->m_pClient && pChar->NPC_IsOwnedBy(pSrc,false))	// it's my pet?
+        if (!pChar->m_pClient && pChar->NPC_IsOwnedBy(pSrc, false))
             continue;
-        if (pChar->Noto_CalcFlag(pSrc) == NOTO_GOOD)                //Avoid to hit someone we can't legally attack (same guild, same party, Vendor etc)
+        if (pChar->Noto_CalcFlag(pSrc) == NOTO_GOOD)
             continue;
-        if (!pChar->CanSeeLOS(pSrc))                                //Avoid hit someone in nearby house
+        if (!pChar->CanSeeLOS(pSrc))
             continue;
 
-        /* On servUo they modify the damage depending of the distance with this formula
-           There no info about this on UO Wiki
-           damage *= ( 11 - from.GetDistanceToSqrt( m ) ) / 10; */
+        int iDist = pSrc->GetDist(pChar);
 
-        pChar->OnTakeDamage(iDmg, pSrc, uType, iDmgPhysical, iDmgFire, iDmgCold, iDmgPoison, iDmgEnergy);
+        // scale: 10 = 100%, 5 = 50%
+        int iScale = 10;
+
+        if (iDist >= 3)
+        {
+            iScale = 10 - (iDist - 2); // 3→9, 4→8, 5→7, 6→6, 7→5, 8→4...
+            if (iScale < 5)
+                iScale = 5;            // floor at 50%
+        }
+
+        int iFinalDmg = (iBaseDmg * iScale) / 10;
+
+        pChar->OnTakeDamage(iFinalDmg, pSrc, uType, iDmgPhysical, iDmgFire, iDmgCold, iDmgPoison, iDmgEnergy);
+
         pChar->Effect(EFFECT_OBJ, ITEMID_FX_SPARKLE_2, this, 1, 15, false, effectHue);
         fMakeSound = true;
     }
+
     if (fMakeSound && (effectSound != SOUND_NONE))
         Sound(effectSound);
 }

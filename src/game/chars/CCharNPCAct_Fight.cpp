@@ -401,9 +401,13 @@ void CChar::NPC_Act_Fight()
     else
     {
         // Not a melee fighter → do NOT close in
-
+        const int iMinRange2  = 4;
+        const int iMaxRange2 = 8;
         if (iDist < 4)
             NPC_Act_Follow(false, 6, true); // back off slightly
+        else if (iDist > iMaxRange2)
+            // Too far → move closer
+            NPC_Act_Follow(false, iMinRange2, false);
     }
 
     if (!_IsTimerSet()) // Nothing could be done, tick again in a while
