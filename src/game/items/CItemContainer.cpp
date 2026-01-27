@@ -481,7 +481,8 @@ CPointMap CItemContainer::GetRandContainerLoc() const
     // Get gump visual from item TDATA2.
     const GUMP_TYPE gump = pItemDef->m_ttContainer.m_idGump;
     // Prepare a random location in the container.
-    const int iRandOnce = CSRand::GetValFast(UINT16_MAX);
+    const int rx = CSRand::GetValFast(UINT16_MAX);
+    const int ry = CSRand::GetValFast(UINT16_MAX);
 
 	// Use custom values in TDATA3/TDATA4, if they are defined.
 	if ( pItemDef->m_ttContainer.m_dwMinXY && pItemDef->m_ttContainer.m_dwMaxXY )
@@ -497,19 +498,20 @@ CPointMap CItemContainer::GetRandContainerLoc() const
 	    if (maxValY == minValY)
 	        maxValY += 1;
 
-	    return {
-	        static_cast<short>(minValX + (iRandOnce % (maxValX - minValX))),
-            static_cast<short>(minValY + (iRandOnce % (maxValY - minValY))),
-            0 };
+        return {
+            static_cast<short>(minValX + (rx % (maxValX - minValX))),
+            static_cast<short>(minValY + (ry % (maxValY - minValY))),
+            static_cast<short>(0) };
 	}
 
     // We may want a keyring with no gump, so no need to show the warning.
     if (IsType(IT_KEYRING))
     {
+
         return {
-            static_cast<short>(minValX + (iRandOnce % (maxValX - minValX))),
-            static_cast<short>(minValY + (iRandOnce % (maxValY - minValY))),
-            0 };
+            static_cast<short>(minValX + (rx % (maxValX - minValX))),
+            static_cast<short>(minValY + (ry % (maxValY - minValY))),
+            static_cast<short>(0) };
     }
 
 	// No TDATA3 and TDATA4: check if we have hardcoded in sm_ContSize the size of the gump indicated by TDATA2.
@@ -534,10 +536,10 @@ CPointMap CItemContainer::GetRandContainerLoc() const
 		}
 	}
 
-	return {
-		static_cast<short>(minValX + (iRandOnce % (maxValX - minValX))),
-		static_cast<short>(minValY + (iRandOnce % (maxValY - minValY))),
-		0 };
+    return {
+        static_cast<short>(minValX + (rx % (maxValX - minValX))),
+        static_cast<short>(minValY + (ry % (maxValY - minValY))),
+        static_cast<short>(0) };
 }
 
 void CItemContainer::ContentAdd( CItem *pItem, CPointMap pt, bool bForceNoStack, uchar gridIndex )
