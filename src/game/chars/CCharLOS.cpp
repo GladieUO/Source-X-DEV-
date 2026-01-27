@@ -26,6 +26,24 @@ bool CChar::CanSeeLOS( const CPointMap &ptDst, CPointMap *pptBlock, int iMaxDist
 		return true;
 
 	CPointMap ptSrc(GetTopPoint());
+
+    bool fSeaLOS = false;
+
+    // Check if source or target is on a ship multi
+    CRegion *pSrcMulti = ptSrc.GetRegion(REGION_TYPE_MULTI);
+    CRegion *pDstMulti = ptDst.GetRegion(REGION_TYPE_MULTI);
+
+    if (pSrcMulti || pDstMulti)
+    {
+        const CItem *pSrcMultiItem = pSrcMulti ? pSrcMulti->GetResourceID().ItemFindFromResource() : nullptr;
+        const CItem *pDstMultiItem = pDstMulti ? pDstMulti->GetResourceID().ItemFindFromResource() : nullptr;
+
+        if ((pSrcMultiItem && pSrcMultiItem->IsType(IT_SHIP)) || (pDstMultiItem && pDstMultiItem->IsType(IT_SHIP)))
+        {
+            fSeaLOS = true;
+        }
+    }
+
 	int iDist = ptSrc.GetDist(ptDst);
 	if ( iDist > iMaxDist )
 	{
@@ -39,41 +57,74 @@ bool CChar::CanSeeLOS( const CPointMap &ptDst, CPointMap *pptBlock, int iMaxDist
 	int iDistTry = 0;
 	while ( --iDist >= 0 )
 	{
-		const DIR_TYPE dir = ptSrc.GetDir(ptDst);
-		uint64 uiBlockFlags;
-		if ( dir % 2 && !IsSetEF(EF_NoDiagonalCheckLOS) )	// test only diagonal dirs
-		{
-			CPointMap ptTest(ptSrc);
-			DIR_TYPE dirTest1 = (DIR_TYPE)(dir - 1);	// get 1st ortogonal
-			DIR_TYPE dirTest2 = (DIR_TYPE)(dir + 1);	// get 2nd ortogonal
-			if ( dirTest2 == DIR_QTY )		// roll over
-				dirTest2 = DIR_N;
+        const DIR_TYPE dir = ptSrc.GetDir(ptDst);
+        uint64 uiBlockFlags;
+        if (dir % 2 && !IsSetEF(EF_NoDiagonalCheckLOS)) // test only diagonal dirs
+        {
+            CPointMap ptTest(ptSrc);
+            DIR_TYPE dirTest1 = (DIR_TYPE)(dir - 1); // get 1st ortogonal
+            DIR_TYPE dirTest2 = (DIR_TYPE)(dir + 1); // get 2nd ortogonal
+            if (dirTest2 == DIR_QTY)                 // roll over
+                dirTest2 = DIR_N;
 
-			ptTest.Move(dirTest1);
-			uiBlockFlags = CAN_C_SWIM|CAN_C_WALK|CAN_C_FLY;
-			char z = CWorldMap::GetHeightPoint2(ptTest, uiBlockFlags, true);
-			short zDiff = (short)(abs(z - ptTest.m_z));
+            ptTest.Move(dirTest1);
+            uiBlockFlags = CAN_C_SWIM | CAN_C_WALK | CAN_C_FLY;
+            char z       = CWorldMap::GetHeightPoint2(ptTest, uiBlockFlags, true);
+            short zDiff  = (short)(abs(z - ptTest.m_z));
 
-			if ( (zDiff > PLAYER_HEIGHT) || (uiBlockFlags & (CAN_I_BLOCK|CAN_I_DOOR)) )		// blocked
-			{
-				ptTest = ptSrc;
-				ptTest.Move(dirTest2);
-				{
-					uiBlockFlags = CAN_C_SWIM|CAN_C_WALK|CAN_C_FLY;
-					z = CWorldMap::GetHeightPoint2(ptTest, uiBlockFlags, true);
-					zDiff = (short)(abs(z - ptTest.m_z));
-					if ( zDiff > PLAYER_HEIGHT )
-						goto blocked;
+            // Naval LOS: ignore ship multi blocking
+            if (fSeaLOS && (uiBlockFlags & CAN_I_BLOCK))
+            {
+                CRegion *pMulti = ptTest.GetRegion(REGION_TYPE_MULTI);
+                if (pMulti)
+                {
+                    const CItem *pMultiItem = pMulti->GetResourceID().ItemFindFromResource();
+                    if (pMultiItem && pMultiItem->GetType() == IT_SHIP)
+                    {
+                        // This tile belongs to a ship multi: ignore LOS blocking
+                        uiBlockFlags &= ~CAN_I_BLOCK;
+                        uiBlockFlags &= ~CAN_I_DOOR;
+                    }
+                }
+            }
 
-					if (uiBlockFlags & (CAN_I_BLOCK|CAN_I_DOOR))
-					{
-						ptSrc = ptTest;
-						goto blocked;
-					}
-				}
-			}
-			ptTest.m_z = z;
-		}
+            if ((zDiff > PLAYER_HEIGHT) || ((uiBlockFlags & (CAN_I_BLOCK | CAN_I_DOOR)) && !fSeaLOS)) // blocked
+            {
+                ptTest = ptSrc;
+                ptTest.Move(dirTest2);
+
+                uiBlockFlags = CAN_C_SWIM | CAN_C_WALK | CAN_C_FLY;
+                z            = CWorldMap::GetHeightPoint2(ptTest, uiBlockFlags, true);
+                zDiff        = (short)(abs(z - ptTest.m_z));
+
+                // Naval LOS: ignore ship multi blocking
+                if (fSeaLOS && (uiBlockFlags & CAN_I_BLOCK))
+                {
+                    CRegion *pMulti = ptTest.GetRegion(REGION_TYPE_MULTI);
+                    if (pMulti)
+                    {
+                        const CItem *pMultiItem = pMulti->GetResourceID().ItemFindFromResource();
+                        if (pMultiItem && pMultiItem->GetType() == IT_SHIP)
+                        {
+                            // Tile belongs to a ship multi -> do not block LOS
+                            uiBlockFlags &= ~CAN_I_BLOCK;
+                            uiBlockFlags &= ~CAN_I_DOOR;
+                        }
+                    }
+                }
+
+                if (zDiff > PLAYER_HEIGHT)
+                    goto blocked;
+
+                if (uiBlockFlags & (CAN_I_BLOCK | CAN_I_DOOR))
+                {
+                    ptSrc = ptTest;
+                    goto blocked;
+                }
+            }
+
+            ptTest.m_z = z;
+        }
 
 		if ( iDist )
 		{
@@ -81,6 +132,18 @@ bool CChar::CanSeeLOS( const CPointMap &ptDst, CPointMap *pptBlock, int iMaxDist
 			uiBlockFlags = CAN_C_SWIM|CAN_C_WALK|CAN_C_FLY;
 			char z = CWorldMap::GetHeightPoint2(ptSrc, uiBlockFlags, true);
             short zDiff = (short)(abs(z - ptSrc.m_z));
+
+            // Naval LOS: ignore ship multi blocking
+            if (fSeaLOS && (uiBlockFlags & CAN_I_BLOCK))
+            {
+                CRegion *pMulti = ptSrc.GetRegion(REGION_TYPE_MULTI);
+                if (pMulti)
+                {
+                    const CItem *pMultiItem = pMulti->GetResourceID().ItemFindFromResource();
+                    if (pMultiItem && pMultiItem->GetType() == IT_SHIP)
+                        uiBlockFlags &= ~CAN_I_BLOCK;
+                }
+            }
 
 			if ( (zDiff > PLAYER_HEIGHT) || (uiBlockFlags & (CAN_I_BLOCK|CAN_I_DOOR)) || (iDistTry > iMaxDist) )
 				goto blocked;
@@ -90,7 +153,7 @@ bool CChar::CanSeeLOS( const CPointMap &ptDst, CPointMap *pptBlock, int iMaxDist
 		}
 	}
 
-	if ( abs(int(ptSrc.m_z) - int(ptDst.m_z)) >= 20 )
+	if (!fSeaLOS && abs(int(ptSrc.m_z) - int(ptDst.m_z)) >= 20)
 		return false;
 	return true;	// made it all the way to the object with no obstructions.
 }
@@ -122,6 +185,25 @@ bool CChar::CanSeeLOS_New( const CPointMap &ptDst, CPointMap *pptBlock, int iMax
 
 	CPointMap ptSrc(GetTopPoint());
 	CPointMap ptNow(ptSrc);
+
+    bool fSeaLOS = false;
+
+    // Check if source or target is on a ship multi
+    CRegion *pSrcMulti = ptSrc.GetRegion(REGION_TYPE_MULTI);
+    CRegion *pDstMulti = ptDst.GetRegion(REGION_TYPE_MULTI);
+
+    if (pSrcMulti || pDstMulti)
+    {
+        const CItem *pSrcMultiItem = pSrcMulti ? pSrcMulti->GetResourceID().ItemFindFromResource() : nullptr;
+        const CItem *pDstMultiItem = pDstMulti ? pDstMulti->GetResourceID().ItemFindFromResource() : nullptr;
+
+        if ((pSrcMultiItem && pSrcMultiItem->IsType(IT_SHIP)) || (pDstMultiItem && pDstMultiItem->IsType(IT_SHIP)))
+        {
+            fSeaLOS = true;
+            if (fSeaLOS)
+                g_Log.EventDebug("Naval LOS detected: %d,%d,%d -> %d,%d,%d\n", ptSrc.m_x, ptSrc.m_y, ptSrc.m_z, ptDst.m_x, ptDst.m_y, ptDst.m_z);
+        }
+    }
 
 	if ( ptSrc.m_map != ptDst.m_map )	// Different map
 		return this->CanSeeLOS_New_Failed(pptBlock, ptNow);
