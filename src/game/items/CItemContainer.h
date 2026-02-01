@@ -18,6 +18,9 @@ class CItemContainer : public CItemVendable, public CContainer
     CUID _uidMultiCrate;
 
 public:
+    void Trade_RecalcGold();
+
+public:
 	static const char *m_sClassName;
 
 	virtual bool NotifyDelete() override;	// overrides CItem:: method

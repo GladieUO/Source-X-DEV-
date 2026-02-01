@@ -249,41 +249,49 @@ void CItemContainer::Trade_Status( bool bCheck )
 	Delete();
 }
 
-void CItemContainer::Trade_UpdateGold( dword platinum, dword gold )
+void CItemContainer::Trade_UpdateGold(dword platinum, dword gold)
 {
-	ADDTOCALLSTACK("CItemContainer::Trade_UpdateGold");
-	// Update trade gold/platinum values on TOL clients
-	CItemContainer *pPartner = dynamic_cast<CItemContainer*>(m_uidLink.ItemFind());
-	if ( !pPartner )
-		return;
-	CChar *pChar1 = dynamic_cast<CChar *>(GetParent());
-	if ( !pChar1 || !pChar1->IsClientActive() )
-		return;
-	CChar *pChar2 = dynamic_cast<CChar *>(pPartner->GetParent());
-	if ( !pChar2 || !pChar2->IsClientActive() )
-		return;
+    ADDTOCALLSTACK("CItemContainer::Trade_UpdateGold");
 
-	bool bUpdateChar1 = false;
-	bool bUpdateChar2 = pChar2->GetClientActive()->GetNetState()->isClientVersionNumber(MINCLIVER_NEWSECURETRADE);
+    CItemContainer *pPartner = dynamic_cast<CItemContainer *>(m_uidLink.ItemFind());
+    if (!pPartner)
+        return;
 
-	// To prevent cheating, check if the char really have these gold/platinum values
-	const int64 iMaxValue = pChar1->m_virtualGold;
-	if ( gold + (platinum * 1000000000LL) > iMaxValue )
-	{
-		gold = (dword)(iMaxValue % 1000000000);
-		platinum = (dword)(iMaxValue / 1000000000);
-		bUpdateChar1 = true;
-	}
+    CChar *pChar1 = dynamic_cast<CChar *>(GetParent());
+    if (!pChar1 || !pChar1->IsClientActive())
+        return;
 
-	m_itEqTradeWindow.m_iGold = gold;
-	m_itEqTradeWindow.m_iPlatinum = platinum;
+    CChar *pChar2 = dynamic_cast<CChar *>(pPartner->GetParent());
+    if (!pChar2 || !pChar2->IsClientActive())
+        return;
 
-	PacketTradeAction cmd(SECURE_TRADE_UPDATEGOLD);
-	cmd.prepareUpdateGold(this, gold, platinum);
-	if ( bUpdateChar1 )
-		cmd.send(pChar1->GetClientActive());
-	if ( bUpdateChar2 )
-		cmd.send(pChar2->GetClientActive());
+    // ❌ REMOVE virtual-gold enforcement
+    // Physical gold is authoritative via items in trade window
+
+    m_itEqTradeWindow.m_iGold     = gold;
+    m_itEqTradeWindow.m_iPlatinum = platinum;
+
+    PacketTradeAction cmd(SECURE_TRADE_UPDATEGOLD);
+    cmd.prepareUpdateGold(this, gold, platinum);
+
+    // Send to both sides (ClassicUO handles filtering)
+    cmd.send(pChar1->GetClientActive());
+    cmd.send(pChar2->GetClientActive());
+}
+
+void CItemContainer::Trade_RecalcGold()
+{
+    ADDTOCALLSTACK("CItemContainer::Trade_RecalcGold");
+
+    if (!IsType(IT_EQ_TRADE_WINDOW))
+        return;
+
+    const int64 totalGold = ContentCount(CResourceID(RES_TYPEDEF, IT_GOLD));
+
+    const dword gold     = (dword)(totalGold % 1000000000LL);
+    const dword platinum = (dword)(totalGold / 1000000000LL);
+
+    Trade_UpdateGold(platinum, gold);
 }
 
 bool CItemContainer::Trade_Delete()
@@ -364,6 +372,10 @@ void CItemContainer::OnWeightChange( int iChange )
 	if ( !pCont )
 		return;	// on ground.
 	pCont->OnWeightChange(iChange);
+    if (IsType(IT_EQ_TRADE_WINDOW))
+    {
+        Trade_RecalcGold();
+    }
 }
 
 CPointMap CItemContainer::GetRandContainerLoc() const
@@ -550,9 +562,23 @@ void CItemContainer::ContentAdd( CItem *pItem, CPointMap pt, bool bForceNoStack,
 		return;
 	if ( pItem == this )
 		return;	// infinite loop.
+    CItemContainer *pTradeCont = nullptr;
 
 	if ( !g_Serv.IsLoadingGeneric() )
 	{
+        CItemContainer *pCheck = this;
+
+        while (pCheck)
+        {
+            if (pCheck->IsType(IT_EQ_TRADE_WINDOW))
+            {
+                pTradeCont = pCheck;
+                break;
+            }
+
+            pCheck = dynamic_cast<CItemContainer *>(pCheck->GetContainer());
+        }
+
         switch (GetType())
         {
             case IT_EQ_TRADE_WINDOW:
@@ -678,6 +704,9 @@ void CItemContainer::ContentAdd( CItem *pItem, CPointMap pt, bool bForceNoStack,
 	CContainer::ContentAddPrivate(pItem);
 	pItem->SetContainedPoint(pt);
 	pItem->SetContainedGridIndex(gridIndex);
+    // --- Trade window gold recalc (handles gold piles AND bags) ---
+    if (pTradeCont)
+        pTradeCont->Trade_RecalcGold();
 
 	switch ( GetType() )
 	{
