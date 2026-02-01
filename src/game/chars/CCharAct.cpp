@@ -5930,11 +5930,11 @@ bool CChar::_CanTick(bool fParentGoingToSleep) const
     //ADDTOCALLSTACK_DEBUG("CChar::_CanTick");
     EXC_TRY("Able to tick?");
 
-    if (IsDisconnected() && !IsTickableEvenIfDisconnected())
-        return false;
-
-    if (IsTickableEvenIfDisconnected())
-        return true; // bypass sector sleep logic entirely
+    if (IsDisconnected())
+	{
+        if (!IsTickableEvenIfDisconnected())
+            return false;
+	}
 
     return CObjBase::_CanTick(fParentGoingToSleep);
 
