@@ -388,7 +388,7 @@ void CChar::NPC_Act_Fight()
 
     // Move in for melee type combat.
     // Only skilled melee fighters are allowed to close in
-    if (Skill_GetBase(SKILL_TACTICS) >= 500)
+    if (Skill_GetBase(SKILL_TACTICS) > 0)
     {
         int iRange = Fight_CalcRange(m_uidWeapon.ItemFind());
         if (!NPC_Act_Follow(false, iRange, false))
