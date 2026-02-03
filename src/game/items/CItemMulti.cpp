@@ -3385,8 +3385,11 @@ CItem *CItemMulti::Multi_Create(CChar *pChar, const CItemBase * pItemDef, CPoint
                             return nullptr;
                         }
                     }
-                    else if (uiBlockFlags & (CAN_I_WATER | CAN_I_BLOCK | CAN_I_CLIMB))  // Did the intensive check find some undesired flags? Stop.
+                    else if ((uiBlockFlags & CAN_I_WATER) || // always block water
+                             ((uiBlockFlags & CAN_I_BLOCK) && (uiBlockFlags & CAN_I_CLIMB)))
                     {
+                        // block only when it's a real obstacle (wall/cliff),
+                        // not just a small decorative rock
                         pChar->SysMessageDefault(DEFMSG_ITEMUSE_MULTI_BLOCKED);
                         return nullptr;
                     }
