@@ -3,8 +3,8 @@ include("${CMAKE_CURRENT_LIST_DIR}/include/Linux-GNU_common.inc.cmake")
 
 function(toolchain_force_compiler)
     if(NOT CROSSCOMPILING_ARCH)
-        set(CMAKE_C_COMPILER "gcc" CACHE STRING "C compiler" FORCE)
-        set(CMAKE_CXX_COMPILER "g++" CACHE STRING "C++ compiler" FORCE)
+        set(CMAKE_C_COMPILER "gcc-12" CACHE STRING "C compiler" FORCE)
+        set(CMAKE_CXX_COMPILER "g++-12" CACHE STRING "C++ compiler" FORCE)
     else()
         message(FATAL_ERROR "Incomplete/to be tested.") # are the names/paths correct?
 
