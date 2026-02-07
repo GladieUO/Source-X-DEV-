@@ -3673,32 +3673,52 @@ void PacketGumpDialog::writeCompressedControls(std::vector<CSString> const *cont
     // --- Texts ---
     if (texts && !texts->empty())
     {
-        uint textsStartPos = getPosition();
+        // Reserve header space FIRST
+        uint headerPos = getPosition();
+        writeInt32(0); // NumTextLines (placeholder)
+        writeInt32(0); // CTxtLen (placeholder)
+        writeInt32(0); // DTxtLen (placeholder)
+
+        uint dataPos = getPosition();
+
+        // Write decompressed text EXACTLY like standard gump
         for (auto const &txt : *texts)
         {
             writeInt16((word)txt.GetLength());
-            writeStringFixedNETUTF16(txt.GetBuffer(), txt.GetLength()); // big-endian UTF16
+            writeStringFixedNETUTF16(txt.GetBuffer(), txt.GetLength());
         }
 
-        uint textsLength           = getPosition() - textsStartPos;
-        zlib::uLong compressLength = zlib::compressBound((zlib::uLong)textsLength);
+        uint textsLength = getPosition() - dataPos;
+
+        zlib::uLong compressLength = zlib::compressBound(textsLength);
         byte *compressBuffer       = new byte[compressLength];
 
-        int error = zlib::compress2(compressBuffer, &compressLength, &m_buffer[textsStartPos], (zlib::uLong)textsLength, Z_DEFAULT_COMPRESSION);
+        int error = zlib::compress2(compressBuffer, &compressLength, &m_buffer[dataPos], textsLength, Z_DEFAULT_COMPRESSION);
 
         if (error != Z_OK || compressLength <= 0)
         {
             delete[] compressBuffer;
-            g_Log.EventError("Compress failed for texts, using standard packet.\n");
             writeStandardControls(controls, texts);
             return;
         }
 
-        seek(textsStartPos);
-        writeInt32((dword)texts->size());
-        writeInt32((dword)compressLength + 4); // CTxtLen
-        writeInt32((dword)textsLength);        // DTxtLen
+        if (compressLength > textsLength + 64)
+        {
+            g_Log.EventError("Abnormal compressed gump text size (raw=%u, compressed=%lu)\n", textsLength, compressLength);
+        }
+
+        // Overwrite decompressed data with compressed data
+        seek(dataPos);
         writeData(compressBuffer, compressLength);
+
+        // Now fill header
+        seek(headerPos);
+        writeInt32((dword)texts->size());
+        writeInt32((dword)compressLength + 4);
+        writeInt32((dword)textsLength);
+
+        // Move cursor to end
+        seek(dataPos + compressLength);
 
         delete[] compressBuffer;
     }
