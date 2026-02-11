@@ -219,26 +219,25 @@ int CServerConfig::Calc_CombatChanceToHit(CChar * pChar, CChar * pCharTarg)
 			}
 			iAttackerSkill = ((iAttackerSkill / 10) + 20) * (100 + minimum(iAttackerHitChance, 45));
 
-			int iTargetIncreaseDefChance = (int)(pChar->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEDEFCHANCE, true));
+			int iTargetIncreaseDefChance = (int)(pCharTarg->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEDEFCHANCE, true));
 			int iTargetSkill = ((pCharTarg->Skill_GetBase(skillTarget) / 10) + 20) * (100 + minimum(iTargetIncreaseDefChance, 45));
 
-			int iChance = iAttackerSkill * 105 / (iTargetSkill * 2);
+			int iChance = iAttackerSkill * 100 / (iTargetSkill * 2);
             if (pChar->IsPlayer() && !pCharTarg->IsPlayer())
             {
                 // Player vs NPC – smoother PvE
                 int iHCI     = (int)pChar->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEHITCHANCE, true);
-                iChance  += 10 + (iHCI / 4); // +10–25 typical
+                iChance  += 5 + (iHCI / 6); // +10–25 typical
             }
             else if (!pChar->IsPlayer())
             {
                 // NPC vs Player – give small buff so mobs don't feel toothless
-                int iHCI = (int)pChar->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEHITCHANCE, true);
-                iChance  += 5 + (iHCI / 4);
+                iChance  += 8;
             }
 			if (iChance < 40)
 				iChance = 40;	// minimum hit chance is 30%
-			else if (iChance > 98)
-				iChance = 98;
+			else if (iChance > 95)
+				iChance = 95;
 			return iChance;
 		}
 	}
