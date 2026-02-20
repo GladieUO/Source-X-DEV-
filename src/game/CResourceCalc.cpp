@@ -227,15 +227,15 @@ int CServerConfig::Calc_CombatChanceToHit(CChar * pChar, CChar * pCharTarg)
             {
                 // Player vs NPC – smoother PvE
                 int iHCI     = (int)pChar->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEHITCHANCE, true);
-                iChance  += 5 + (iHCI / 6); // +10–25 typical
+                iChance  += 5 + (iHCI / 4); // +10–25 typical
             }
             else if (!pChar->IsPlayer())
             {
                 // NPC vs Player – give small buff so mobs don't feel toothless
-                iChance  += 8;
+                iChance  += 5;
             }
-			if (iChance < 40)
-				iChance = 40;	// minimum hit chance is 30%
+			if (iChance < 35)
+				iChance = 35;	// minimum hit chance is 30%
 			else if (iChance > 95)
 				iChance = 95;
 			return iChance;
