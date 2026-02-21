@@ -227,7 +227,7 @@ int CServerConfig::Calc_CombatChanceToHit(CChar * pChar, CChar * pCharTarg)
             {
                 // Player vs NPC – smoother PvE
                 int iHCI     = (int)pChar->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEHITCHANCE, true);
-                iChance  += 5 + (iHCI / 4); // +10–25 typical
+                iChance  += 10 + (iHCI / 4); // +10–25 typical
             }
             else if (!pChar->IsPlayer())
             {
