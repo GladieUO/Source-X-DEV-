@@ -955,9 +955,10 @@ effect_bounce:
 
                     if (pReactive)
                     {
-                        int iReactiveDamage = (iDmg * pReactive->m_itSpell.m_PolyStr) / 100;
-                        int iReactiveRefDam = iReactiveDamage;
-                        int iReactiveRedDam = iReactiveDamage;
+                        int percent = pReactive->m_itSpell.m_spelllevel;
+                        int iReactiveRefDam          = (iDmg * percent) / 100;       // full percent reflect
+                        int iReactiveRedDam          = (iDmg * (percent / 2)) / 100; // half percent reduction
+                        int iReactiveDamage          = iReactiveRefDam;              // keep for trigger compatibility
                         SOUND_TYPE ReactiveSnd       = 0x1F1;
                         ITEMID_TYPE ReactiveEffectID = ITEMID_FX_CURSE_EFFECT;
                         DAMAGE_TYPE ReactiveDamType  = (DAMAGE_FIXED | DAMAGE_REACTIVE);
@@ -984,7 +985,7 @@ effect_bounce:
                                 iReactiveDamage = 1;
 
                             if (iReactiveRedDam < 1)
-                                iReactiveRedDam = 1;
+                                iReactiveRedDam = 0;
 
                             if (iReactiveRefDam < 1)
                                 iReactiveRefDam = 1;

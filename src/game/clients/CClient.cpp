@@ -33,8 +33,7 @@ CClient::CClient(CNetState* state)
 
 	// update ip history
 	HistoryIP& history = g_NetworkManager.getIPHistoryManager().getHistoryForIP(GetPeer());
-	++ history.m_iPendingConnectionRequests;
-	++ history.m_iAliveSuccessfulConnections;
+    ++history.m_iPendingConnectionRequests;
 
 	m_Crypt.SetClientVerFromOther( g_Serv.m_ClientVersion );
 	m_pAccount = nullptr;
@@ -90,18 +89,23 @@ CClient::~CClient() noexcept
 	ADDTOCALLSTACK("CClient::~CClient");
 	EXC_TRY("Cleanup in destructor");
 
-	// update ip history
-	HistoryIP& history = g_NetworkManager.getIPHistoryManager().getHistoryForIP(GetPeer());
-	if ( GetConnectType() != CONNECT_GAME )
+// update ip history
+    HistoryIP &history = g_NetworkManager.getIPHistoryManager().getHistoryForIP(GetPeer());
+
+    // Always decrement TCP connection counter
+    if (history.m_iPendingConnectionRequests > 0)
+        --history.m_iPendingConnectionRequests;
+    else
+        history.m_iPendingConnectionRequests = 0;
+
+    // Decrement alive only if this was a game client
+    if (GetConnectType() == CONNECT_GAME)
     {
-        EXC_TRYSUB("m_iPendingConnectionRequests");
-
-        ASSERT(history.m_iPendingConnectionRequests > 0);
-		-- history.m_iPendingConnectionRequests;
-
-        EXC_CATCHSUB("m_iPendingConnectionRequests");
+        if (history.m_iAliveSuccessfulConnections > 0)
+            --history.m_iAliveSuccessfulConnections;
+        else
+            history.m_iAliveSuccessfulConnections = 0;
     }
-    -- history.m_iAliveSuccessfulConnections;
 
 	const bool fWasChar = ( m_pChar != nullptr );
 

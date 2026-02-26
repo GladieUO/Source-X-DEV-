@@ -4390,30 +4390,53 @@ CChar::DeathRequestResult CChar::Death()
 	CChar * pKiller = nullptr;
 	tchar * pszKillStr = Str_GetTemp();
 	int iKillStrLen = snprintf( pszKillStr, Str_TempLength(), g_Cfg.GetDefaultMsg(DEFMSG_MSG_KILLED_BY), (m_pPlayer)? 'P':'N', GetNameWithoutIncognito() );
-	for ( size_t count = 0; count < m_lastAttackers.size(); ++count )
-	{
-		pKiller = CUID::CharFindFromUID(m_lastAttackers[count].charUID);
-		if ( pKiller && (m_lastAttackers[count].amountDone > 0) )
-		{
-			if ( IsTrigUsed(TRIGGER_KILL) )
-			{
+    std::set<CChar *> credited;
+
+    for (size_t count = 0; count < m_lastAttackers.size(); ++count)
+    {
+        pKiller = CUID::CharFindFromUID(m_lastAttackers[count].charUID);
+
+        if (!pKiller || pKiller->IsDeleted())
+            continue;
+
+        if (m_lastAttackers[count].amountDone <= 0)
+            continue;
+
+        // Credit killer once
+        if (credited.find(pKiller) == credited.end())
+        {
+            if (IsTrigUsed(TRIGGER_KILL))
+            {
                 CScriptTriggerArgsPtr pScriptArgs = CScriptParserBufs::GetCScriptTriggerArgsPtr();
                 pScriptArgs->Init(GetAttackersCount(), 0, 0, this);
-                if ( pKiller->OnTrigger(CTRIG_Kill, pScriptArgs, pKiller) == TRIGRET_RET_TRUE )
-					continue;
-			}
 
-			pKiller->Noto_Kill( this, GetAttackersCount() );
+                pKiller->OnTrigger(CTRIG_Kill, pScriptArgs, pKiller);
+            }
 
-			iKillStrLen += snprintf(
-				pszKillStr + iKillStrLen, Str_TempLength() - iKillStrLen,
-				"%s%c'%s'.",
-                iKillers ? ", " : "",
-                (pKiller->m_pPlayer) ? 'P':'N', pKiller->GetNameWithoutIncognito() );
+            pKiller->Noto_Kill(this, GetAttackersCount());
+            credited.insert(pKiller);
+        }
 
-			++iKillers;
-		}
-	}
+        // If killer is NPC, check owner
+        if (pKiller->m_pNPC)
+        {
+            CChar *pOwner = pKiller->NPC_PetGetOwner();
+
+            if (pOwner && !pOwner->IsDeleted() && credited.find(pOwner) == credited.end())
+            {
+                if (IsTrigUsed(TRIGGER_KILL))
+                {
+                    CScriptTriggerArgsPtr pScriptArgsOwner = CScriptParserBufs::GetCScriptTriggerArgsPtr();
+                    pScriptArgsOwner->Init(GetAttackersCount(), 0, 0, this);
+
+                    pOwner->OnTrigger(CTRIG_Kill, pScriptArgsOwner, pOwner);
+                }
+
+                pOwner->Noto_Kill(this, GetAttackersCount());
+                credited.insert(pOwner);
+            }
+        }
+    }
 
 	// Record the kill event for posterity
 	if ( !iKillers )

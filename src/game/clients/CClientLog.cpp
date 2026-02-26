@@ -78,11 +78,13 @@ void CClient::SetConnectType( CONNECT_TYPE iType )
         }
     };
 
-	if (_IsFullyConnectedType(iType) && !_IsFullyConnectedType(m_iConnectType))
-	{
-		HistoryIP& history = g_NetworkManager.getIPHistoryManager().getHistoryForIP(GetPeer());
-		-- history.m_iPendingConnectionRequests;
-	}
+    // If we just became a fully logged in GAME client
+    if (iType == CONNECT_GAME && m_iConnectType != CONNECT_GAME)
+    {
+        HistoryIP &history = g_NetworkManager.getIPHistoryManager().getHistoryForIP(GetPeer());
+
+        ++history.m_iAliveSuccessfulConnections;
+    }
 	m_iConnectType = iType;
 
 /*
