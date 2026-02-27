@@ -64,20 +64,6 @@ void CClient::SetConnectType( CONNECT_TYPE iType )
 {
 	ADDTOCALLSTACK("CClient::SetConnectType");
 
-    auto _IsFullyConnectedType = [](const CONNECT_TYPE typ) noexcept -> bool {
-        switch (typ)
-        {
-        case CONNECT_GAME:
-        case CONNECT_HTTP:
-        case CONNECT_TELNET:
-        case CONNECT_UOG:
-        case CONNECT_AXIS:
-            return true;
-        default:
-            return false;
-        }
-    };
-
     // If we just became a fully logged in GAME client
     if (iType == CONNECT_GAME && m_iConnectType != CONNECT_GAME)
     {
