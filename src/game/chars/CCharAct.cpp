@@ -4422,7 +4422,7 @@ CChar::DeathRequestResult CChar::Death()
         {
             CChar *pOwner = pKiller->NPC_PetGetOwner();
 
-            if (pOwner && !pOwner->IsDeleted() && credited.find(pOwner) == credited.end())
+            if (pOwner && !pOwner->IsDeleted() && pOwner->GetTopDist3D(this) <= g_Cfg.m_iMapViewSize && credited.find(pOwner) == credited.end())
             {
                 if (IsTrigUsed(TRIGGER_KILL))
                 {
