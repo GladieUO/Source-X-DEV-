@@ -2309,27 +2309,73 @@ WAR_SWING_TYPE CChar::Fight_Hit( CChar * pCharTarg )
 		if ( pWeapon && pCurseWeapon )
 			uiHitLifeLeech += pCurseWeapon->m_itSpell.m_spelllevel;
 
-		bool fMakeLeechSound = false;
-		if ( uiHitLifeLeech )
-		{
-			uiHitLifeLeech = (ushort)(g_Rand.GetVal2(0, (iDmg * uiHitLifeLeech * 30) / 10000));	// leech 0% ~ 30% of damage value
-			UpdateStatVal(STAT_STR, uiHitLifeLeech);
-            fMakeLeechSound = true;
-		}
+        bool fMakeLeechSound = false;
 
-		ushort uiHitManaLeech = (ushort)GetPropNum(pCCPChar, PROPCH_HITLEECHMANA, pBaseCCPChar);
-		if ( uiHitManaLeech )
-		{
-			uiHitManaLeech = (ushort)(g_Rand.GetVal2(0, (iDmg * uiHitManaLeech * 40) / 10000));	// leech 0% ~ 40% of damage value
-			UpdateStatVal(STAT_INT, uiHitManaLeech);
-            fMakeLeechSound = true;
-		}
+        // --------------------
+        // LIFE LEECH
+        // --------------------
+        if (uiHitLifeLeech && (g_Rand.GetLLVal(100) < uiHitLifeLeech))
+        {
+            int percent = 10 + (uiHitLifeLeech / 20); // 10–15%
+            int leech   = (iDmg * percent) / 100;
 
-		if ( GetPropNum(pCCPChar, PROPCH_HITLEECHSTAM, pBaseCCPChar) > g_Rand.GetLLVal(100) )
-		{
-			UpdateStatVal(STAT_DEX, (ushort)iDmg);	// leech 100% of damage value
+            // Pets get flat bonus
+            if (IsNPC())
+                leech += uiHitLifeLeech / 10;
+
+            if (leech < 2)
+                leech = 2;
+
+            if (leech > 30)
+                leech = 30;
+
+            UpdateStatVal(STAT_STR, (ushort)leech);
             fMakeLeechSound = true;
-		}
+        }
+
+        // --------------------
+        // MANA LEECH
+        // --------------------
+        ushort uiHitManaLeech = (ushort)GetPropNum(pCCPChar, PROPCH_HITLEECHMANA, pBaseCCPChar);
+        if (uiHitManaLeech && (g_Rand.GetLLVal(100) < uiHitManaLeech))
+        {
+            int percent = 10 + (uiHitManaLeech / 20);
+            int leech   = (iDmg * percent) / 100;
+
+            if (IsNPC())
+                leech += uiHitManaLeech / 10;
+
+            if (leech < 2)
+                leech = 2;
+
+            if (leech > 30)
+                leech = 30;
+
+            UpdateStatVal(STAT_INT, (ushort)leech);
+            fMakeLeechSound = true;
+        }
+
+        // --------------------
+        // STAMINA LEECH
+        // --------------------
+        ushort uiHitStamLeech = (ushort)GetPropNum(pCCPChar, PROPCH_HITLEECHSTAM, pBaseCCPChar);
+        if (uiHitStamLeech && (g_Rand.GetLLVal(100) < uiHitStamLeech))
+        {
+            int percent = 10 + (uiHitStamLeech / 20);
+            int leech   = (iDmg * percent) / 100;
+
+            if (IsNPC())
+                leech += uiHitStamLeech / 10;
+
+            if (leech < 2)
+                leech = 2;
+
+            if (leech > 30)
+                leech = 30;
+
+            UpdateStatVal(STAT_DEX, (ushort)leech);
+            fMakeLeechSound = true;
+        }
 
 		ushort uiManaDrain = 0;
 		if ( g_Cfg.m_iFeatureAOS & FEATURE_AOS_UPDATE_B )
