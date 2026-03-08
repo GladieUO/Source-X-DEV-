@@ -191,6 +191,15 @@ void CNetState::init(SOCKET socket, CSocketAddress addr)
 
     m_peerAddress = addr;
     m_socket.SetSocket(socket);
+    #ifdef _WIN32
+        DWORD timeout = 5000; // 5 seconds
+        m_socket.SetSockOpt(SO_SNDTIMEO, &timeout, sizeof(timeout));
+    #else
+        struct timeval tv;
+        tv.tv_sec  = 5;
+        tv.tv_usec = 0;
+        m_socket.SetSockOpt(SO_SNDTIMEO, &tv, sizeof(tv));
+    #endif
 
     if (g_Cfg.m_fUseAsyncNetwork != 0)
     {

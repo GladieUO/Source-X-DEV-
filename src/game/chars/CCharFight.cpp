@@ -299,15 +299,33 @@ void CChar::OnHarmedBy( CChar * pCharSrc )
 		if (Skill_GetActive() == NPCACT_RIDDEN) //prevent action 111 to be changed.
 			return;
 	}
-	if (fFightActive && m_Fight_Targ_UID.CharFind())
-	{
-		// In war mode already
-		if ( m_pPlayer )
-			return;
-		if ( g_Rand.Get16ValFast( 10 ))
-			return;
-		// NPC will Change targets.
-	}
+    if (fFightActive && m_Fight_Targ_UID.CharFind())
+    {
+        // Players don't auto-switch targets
+        if (m_pPlayer)
+            return;
+
+        // If already attacking this source, don't restart attack cycle
+        if (m_Fight_Targ_UID == pCharSrc->GetUID())
+            return;
+
+        if (m_atFight.m_iWarSwingState == WAR_SWING_SWINGING)
+            return;
+
+        int64 now = CWorldGameTime::GetCurrentTime().GetTimeRaw();
+
+        // Prevent target switching spam (important for summon spam)
+        const int TARGET_SWITCH_COOLDOWN = 5000; // 5 seconds
+
+        if (now - m_timeLastTargetSwitch < TARGET_SWITCH_COOLDOWN)
+            return;
+
+        // Keep original randomness
+        if (g_Rand.GetVal(10))
+            return;
+
+        m_timeLastTargetSwitch = now;
+    }
 
 	if (!IsSetCombatFlags(COMBAT_NOPETDESERT) && m_pNPC && NPC_IsOwnedBy(pCharSrc, false))
 		NPC_PetDesert();
@@ -2339,7 +2357,7 @@ WAR_SWING_TYPE CChar::Fight_Hit( CChar * pCharTarg )
         ushort uiHitManaLeech = (ushort)GetPropNum(pCCPChar, PROPCH_HITLEECHMANA, pBaseCCPChar);
         if (uiHitManaLeech && (g_Rand.GetLLVal(100) < uiHitManaLeech))
         {
-            int percent = 10 + (uiHitManaLeech / 20);
+            int percent = 10 + (uiHitManaLeech / 15);
             int leech   = (iDmg * percent) / 100;
 
             if (IsNPC())
@@ -2348,8 +2366,8 @@ WAR_SWING_TYPE CChar::Fight_Hit( CChar * pCharTarg )
             if (leech < 2)
                 leech = 2;
 
-            if (leech > 30)
-                leech = 30;
+            if (leech > 40)
+                leech = 40;
 
             UpdateStatVal(STAT_INT, (ushort)leech);
             fMakeLeechSound = true;
@@ -2361,7 +2379,7 @@ WAR_SWING_TYPE CChar::Fight_Hit( CChar * pCharTarg )
         ushort uiHitStamLeech = (ushort)GetPropNum(pCCPChar, PROPCH_HITLEECHSTAM, pBaseCCPChar);
         if (uiHitStamLeech && (g_Rand.GetLLVal(100) < uiHitStamLeech))
         {
-            int percent = 10 + (uiHitStamLeech / 20);
+            int percent = 10 + (uiHitStamLeech / 10);
             int leech   = (iDmg * percent) / 100;
 
             if (IsNPC())
@@ -2370,8 +2388,8 @@ WAR_SWING_TYPE CChar::Fight_Hit( CChar * pCharTarg )
             if (leech < 2)
                 leech = 2;
 
-            if (leech > 30)
-                leech = 30;
+            if (leech > 70)
+                leech = 70;
 
             UpdateStatVal(STAT_DEX, (ushort)leech);
             fMakeLeechSound = true;

@@ -377,10 +377,21 @@ SOCKET CSocket::Accept( CSocketAddress & SockAddr ) const
 	return( hSocket );
 }
 
-int CSocket::Send( const void * pData, int len ) const
+int CSocket::Send(const void *pData, int len) const
 {
-	// RETURN: length sent
-	return( send( m_hSocket, static_cast<const char *>(pData), len, 0 ));
+    auto start = std::chrono::steady_clock::now();
+
+    int ret = send(m_hSocket, static_cast<const char *>(pData), len, 0);
+
+    auto end     = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+    if (elapsed > 200) // send took unusually long
+    {
+        g_Log.EventWarn("Slow send() detected: socket %d took %lld ms\n", (int)m_hSocket, elapsed);
+    }
+
+    return ret;
 }
 
 int CSocket::Receive( void * pData, int len, int flags )
