@@ -3220,10 +3220,24 @@ bool CChar::Spell_CastDone()
 				CItemCorpse* pCorpse = dynamic_cast <CItemCorpse*> (pObj); //This is probably redundant.
                 if (pCorpse == nullptr)
                 {
-                    SysMessage("That is not a corpse!");
+                    SysMessageDefault(DEFMSG_SPELL_ANIMDEAD_NC);
                     return false;
                 }
-                Spell_Summon_Place(pSummon, pCorpse->GetTopPoint());
+
+			    m_atMagery.m_uiSummonID = pCorpse->GetCorpseType();
+			    // Necromancers do not raise humans, but zombies.
+			    if (CCharBase::IsPlayableID(m_atMagery.m_uiSummonID))
+			    {
+			        m_atMagery.m_uiSummonID = CREID_ZOMBIE;
+			    }
+			    pSummon = CreateBasic(m_atMagery.m_uiSummonID);
+			    if (!pSummon)
+			    {
+					SysMessageDefault(DEFMSG_SPELL_ANIMDEAD_FAIL);
+			        return false;
+			    }
+
+			    Spell_Summon_Place(pSummon, pCorpse->GetTopPoint());
                 if (!pSummon->RaiseCorpse(pCorpse))
 				{
 					SysMessageDefault(DEFMSG_SPELL_ANIMDEAD_FAIL);
