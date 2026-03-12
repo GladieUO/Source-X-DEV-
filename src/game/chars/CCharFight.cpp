@@ -1390,11 +1390,12 @@ void CChar::Fight_ClearAll()
     if (!g_Cfg.IsSkillFlag(Skill_GetActive(), SKF_MAGIC) && !IsStatFlag(STATF_PET) && !IsStatFlag(STATF_RIDDEN))
     {
         m_atFight.m_iWarSwingState = WAR_SWING_EQUIPPING;
+		m_atFight.m_iRecoilDelay = 0;
+		m_atFight.m_iSwingAnimationDelay = 0;
+		m_atFight.m_iSwingAnimation = 0;
+		m_atFight.m_iSwingIgnoreLastHitTag = 0;
     }
-	m_atFight.m_iRecoilDelay = 0;
-	m_atFight.m_iSwingAnimationDelay = 0;
-	m_atFight.m_iSwingAnimation = 0;
-	m_atFight.m_iSwingIgnoreLastHitTag = 0;
+
 
 	SetKeyStr("LastHit", "");
 	StatFlag_Clear(STATF_WAR);
@@ -1411,11 +1412,12 @@ bool CChar::Fight_Clear(CChar *pChar, bool fForced)
     if (!g_Cfg.IsSkillFlag(Skill_GetActive(), SKF_MAGIC) && !IsStatFlag(STATF_PET) && !IsStatFlag(STATF_RIDDEN))
     {
         m_atFight.m_iWarSwingState = WAR_SWING_EQUIPPING;
+		m_atFight.m_iRecoilDelay = 0;
+		m_atFight.m_iSwingAnimationDelay = 0;
+		m_atFight.m_iSwingAnimation = 0;
+		m_atFight.m_iSwingIgnoreLastHitTag = 0;		
     }
-    m_atFight.m_iRecoilDelay = 0;
-    m_atFight.m_iSwingAnimationDelay = 0;
-    m_atFight.m_iSwingAnimation = 0;
-    m_atFight.m_iSwingIgnoreLastHitTag = 0;
+
 
 	CItemMemory* pMemoryFight =  Memory_FindObj(m_Fight_Targ_UID);
     if (pMemoryFight && (pMemoryFight->IsMemoryTypes(MEMORY_FIGHT) || pMemoryFight->IsMemoryTypes(MEMORY_IRRITATEDBY)) &&
