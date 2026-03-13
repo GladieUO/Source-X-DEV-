@@ -231,6 +231,17 @@ void CChar::NPC_Act_Fight()
     if (pChar == nullptr || !pChar->IsTopLevel()) // target is not valid anymore ?
         return;
 
+    // If the current target cannot be attacked anymore, find a better one
+    if (!pChar->Fight_IsAttackableState() || !CanSeeLOS(pChar))
+    {
+        CChar *pNew = NPC_FightFindBestTarget();
+        if (pNew && pNew != pChar)
+        {
+            Fight_Attack(pNew);
+            pChar = pNew;
+        }
+    }
+
     if (Attacker_GetIgnore(pChar))
     {
         if (!NPC_FightFindBestTarget())
