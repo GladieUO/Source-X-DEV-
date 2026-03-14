@@ -167,6 +167,7 @@ public:
 	int64 _iTimeLastHitsUpdate;
 	int64 _iTimeLastCallGuards;
     int64 m_timeLastTargetSwitch = 0;
+    int64 m_timeTargetLostLOS    = 0;
 
 	int64 m_virtualGold;		// Virtual gold used by TOL clients
 

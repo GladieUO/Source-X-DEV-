@@ -10,6 +10,7 @@
 #include "../triggers.h"
 #include "CChar.h"
 #include "CCharNPC.h"
+#include "../CWorldGameTime.h"
 #include "../items/CItem.h"
 #include "../items/CItemBase.h"
 
@@ -234,12 +235,38 @@ void CChar::NPC_Act_Fight()
     // If the current target cannot be attacked anymore, find a better one
     if (!pChar->Fight_IsAttackableState() || !CanSeeLOS(pChar))
     {
-        CChar *pNew = NPC_FightFindBestTarget();
-        if (pNew && pNew != pChar)
+        int64 now = CWorldGameTime::GetCurrentTime().GetTimeRaw();
+
+        if (!m_timeTargetLostLOS)
+            m_timeTargetLostLOS = now;
+
+        const int TARGET_LOS_TIMEOUT = 5000; // 5 seconds
+
+        if (now - m_timeTargetLostLOS > TARGET_LOS_TIMEOUT)
         {
-            Fight_Attack(pNew);
-            pChar = pNew;
+            CChar *pNew = NPC_FightFindBestTarget();
+
+            if (pNew && pNew != pChar)
+            {
+                Fight_Attack(pNew);
+                pChar = pNew;
+            }
+            else
+            {
+                Skill_Start(SKILL_NONE);
+                StatFlag_Clear(STATF_WAR);
+                m_Fight_Targ_UID.InitUID();
+
+                NPC_Act_Idle();
+                return;
+            }
+
+            m_timeTargetLostLOS = 0;
         }
+    }
+    else
+    {
+        m_timeTargetLostLOS = 0;
     }
 
     if (Attacker_GetIgnore(pChar))
