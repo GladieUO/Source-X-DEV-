@@ -3675,18 +3675,11 @@ bool CChar::OnSpellEffect( SPELL_TYPE spell, CChar * pCharSrc, int iSkillLevel, 
         else
         {
             // Evaluating Intelligence mult
-            iEffect *= ((pCharSrc->Skill_GetBase(SKILL_EVALINT) * 3) / 1000) + 1;
-            if (m_pPlayer && pCharSrc->m_pPlayer)
-            {
-                int pvpPercent = g_Cfg.m_iPvpReductionPercentageSpell; // e.g. 50
-                pvpPercent = minimum(maximum(pvpPercent, 0), 100);
-
-                iEffect = (iEffect * pvpPercent) / 100;
-            }
+            iEffect *= ((pCharSrc->Skill_GetBase(SKILL_EVALINT) * 2) / 1000) + 1;
 
             // Spell Damage Increase bonus
             int DamageBonus = (int)(pCharSrc->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASESPELLDAM, true));
-            if (m_pPlayer && pCharSrc->m_pPlayer && DamageBonus > 70)		// Spell Damage Increase is capped at 15% on PvP
+            if (m_pPlayer && pCharSrc->m_pPlayer && DamageBonus > 70)		// Spell Damage Increase is capped at 70% on PvP
                 DamageBonus = 70;
 
             // INT bonus
@@ -3703,6 +3696,14 @@ bool CChar::OnSpellEffect( SPELL_TYPE spell, CChar * pCharSrc, int iSkillLevel, 
             }
 
             iEffect += ((iEffect * DamageBonus) / 100);
+
+            if (m_pPlayer && pCharSrc->m_pPlayer)
+            {
+                int pvpPercent = g_Cfg.m_iPvpReductionPercentageSpell; // Effectivness of spell damage in PvP, in percentage. 100% means no reduction, 0% means spell damage is reduced to 0 in PvP.
+                pvpPercent     = minimum(maximum(pvpPercent, 0), 100);
+
+                iEffect = (iEffect * pvpPercent) / 100;
+            }
         }
 	}
 
@@ -3789,14 +3790,14 @@ bool CChar::OnSpellEffect( SPELL_TYPE spell, CChar * pCharSrc, int iSkillLevel, 
 		{
 			if ( IsStatFlag(STATF_REFLECTION) )
 			{
-				Effect(EFFECT_OBJ, ITEMID_FX_GLOW, this, 10, 5);
+                Effect(EFFECT_OBJ, ITEMID_FX_BLESS_EFFECT, this, 18, 9);
 				CItem *pMagicReflect = LayerFind(LAYER_SPELL_Magic_Reflect);
 				if ( pMagicReflect )
 					pMagicReflect->Delete();
 
 				if ((pCharSrc->IsStatFlag(STATF_REFLECTION)) && (!IsSetMagicFlags(MAGICF_NOREFLECTOWN))) // caster is under reflection effect too, so the spell will reflect back to default target
 				{
-					pCharSrc->Effect(EFFECT_OBJ, ITEMID_FX_GLOW, pCharSrc, 10, 5);
+                    pCharSrc->Effect(EFFECT_OBJ, ITEMID_FX_BLESS_EFFECT, pCharSrc, 18, 9);
 					pMagicReflect = pCharSrc->LayerFind(LAYER_SPELL_Magic_Reflect);
 					if ( pMagicReflect )
 						pMagicReflect->Delete();
@@ -3806,7 +3807,7 @@ bool CChar::OnSpellEffect( SPELL_TYPE spell, CChar * pCharSrc, int iSkillLevel, 
 					pMagicReflect = pCharSrc->LayerFind(LAYER_SPELL_Magic_Reflect);
 					if (pMagicReflect && (IsSetMagicFlags(MAGICF_DELREFLECTOWN)))
 					{
-						pCharSrc->Effect(EFFECT_OBJ, ITEMID_FX_GLOW, pCharSrc, 10, 5);
+                        pCharSrc->Effect(EFFECT_OBJ, ITEMID_FX_BLESS_EFFECT, pCharSrc, 18, 9);
 						pMagicReflect->Delete();
 					}
 					else {
