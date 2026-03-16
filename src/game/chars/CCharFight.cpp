@@ -1409,24 +1409,20 @@ bool CChar::Fight_Clear(CChar *pChar, bool fForced)
     if ( !pChar || !Attacker_Delete(pChar, fForced, ATTACKER_CLEAR_FORCED) )
 		return false;
 
-    if (!g_Cfg.IsSkillFlag(Skill_GetActive(), SKF_MAGIC) && !IsStatFlag(STATF_PET) && !IsStatFlag(STATF_RIDDEN))
-    {
-        m_atFight.m_iWarSwingState = WAR_SWING_EQUIPPING;
-		m_atFight.m_iRecoilDelay = 0;
-		m_atFight.m_iSwingAnimationDelay = 0;
-		m_atFight.m_iSwingAnimation = 0;
-		m_atFight.m_iSwingIgnoreLastHitTag = 0;		
-    }
-
-
-	CItemMemory* pMemoryFight =  Memory_FindObj(m_Fight_Targ_UID);
-    if (pMemoryFight && (pMemoryFight->IsMemoryTypes(MEMORY_FIGHT) || pMemoryFight->IsMemoryTypes(MEMORY_IRRITATEDBY)) &&
-        !pMemoryFight->IsMemoryTypes(MEMORY_IPET))
-        pMemoryFight->Delete();
+	CItemMemory* pMemoryFight = Memory_FindObj(pChar->GetUID());
+	if ( pMemoryFight && ( pMemoryFight->IsMemoryTypes(MEMORY_FIGHT) || pMemoryFight->IsMemoryTypes(MEMORY_IRRITATEDBY) ) )
+		pMemoryFight->Delete();
 
 	// Go to my next target.
-	if (m_Fight_Targ_UID == pChar->GetUID())
+    if (m_Fight_Targ_UID == pChar->GetUID())
+    {
+        m_atFight.m_iWarSwingState = WAR_SWING_EQUIPPING;
+        m_atFight.m_iRecoilDelay = 0;
+        m_atFight.m_iSwingAnimationDelay = 0;
+        m_atFight.m_iSwingAnimation = 0;
+        m_atFight.m_iSwingIgnoreLastHitTag = 0;
 		m_Fight_Targ_UID.InitUID();
+    }
 
 	if ( m_pNPC )
 	{
