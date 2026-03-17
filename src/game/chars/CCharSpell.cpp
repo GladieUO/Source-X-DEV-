@@ -351,6 +351,13 @@ CChar * CChar::Spell_Summon_Place( CChar * pChar, CPointMap ptTarg, int64 iDurat
 	}
 	pChar->StatFlag_Set(STATF_CONJURED);	// conjured creates have no loot
 	pChar->NPC_LoadScript(false);
+	pChar->MoveToChar(ptTarg);
+
+    // Check, if summon died after placing (like summoned on damaging area or trap).
+    if (pChar->Stat_GetVal(STAT_STR) <= 0)
+    {
+        return nullptr;
+    }
 
     if (IsSetOF(OF_PetSlots))
     {
@@ -359,9 +366,8 @@ CChar * CChar::Spell_Summon_Place( CChar * pChar, CPointMap ptTarg, int64 iDurat
         UnreferencedParameter(followers);
     }
 
-	pChar->NPC_PetSetOwner(this);
-	pChar->MoveToChar(ptTarg);
-	pChar->m_ptHome = ptTarg;
+    pChar->NPC_PetSetOwner(this);
+    pChar->m_ptHome = ptTarg;
 	pChar->m_pNPC->m_Home_Dist_Wander = 10;
 	pChar->NPC_CreateTrigger();		// removed from NPC_LoadScript() and triggered after char placement
 	//pChar->NPC_PetSetOwner(this);
