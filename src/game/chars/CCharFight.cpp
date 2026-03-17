@@ -1382,21 +1382,16 @@ void CChar::Fight_ClearAll()
 	ADDTOCALLSTACK("CChar::Fight_ClearAll");
 	if ( Fight_IsActive() )
 	{
-		Skill_Start(SKILL_NONE);
+	    Skill_Start(SKILL_NONE);
+	    m_atFight.m_iWarSwingState = WAR_SWING_EQUIPPING;
+	    m_atFight.m_iRecoilDelay = 0;
+	    m_atFight.m_iSwingAnimationDelay = 0;
+	    m_atFight.m_iSwingAnimation = 0;
+	    m_atFight.m_iSwingIgnoreLastHitTag = 0;
 		m_Fight_Targ_UID.InitUID();
 	}
 
     Attacker_Clear();
-    if (!g_Cfg.IsSkillFlag(Skill_GetActive(), SKF_MAGIC) && !IsStatFlag(STATF_PET) && !IsStatFlag(STATF_RIDDEN))
-    {
-        m_atFight.m_iWarSwingState = WAR_SWING_EQUIPPING;
-		m_atFight.m_iRecoilDelay = 0;
-		m_atFight.m_iSwingAnimationDelay = 0;
-		m_atFight.m_iSwingAnimation = 0;
-		m_atFight.m_iSwingIgnoreLastHitTag = 0;
-    }
-
-
 	SetKeyStr("LastHit", "");
 	StatFlag_Clear(STATF_WAR);
 	UpdateModeFlag();
