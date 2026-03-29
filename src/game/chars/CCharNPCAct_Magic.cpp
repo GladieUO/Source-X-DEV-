@@ -237,6 +237,9 @@ bool CChar::NPC_FightMagery(CChar * pChar)
             CScriptTriggerArgsPtr pScriptArgs = CScriptParserBufs::GetCScriptTriggerArgsPtr();
             pScriptArgs->Init((int)spell, (int)bWandUse, 0, pTarg);
             pScriptArgs->m_VarsLocal.SetNum("HealThreshold", iHealThreshold);
+            int iCastTime = g_Cfg.GetSpellDef(spell)->m_CastTime.m_aiValues[0];
+
+            pScriptArgs->m_iN3 = iCastTime;
 
             switch (OnTrigger(CTRIG_NPCActCast, pScriptArgs, this))
             {
