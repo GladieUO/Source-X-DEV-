@@ -5813,10 +5813,10 @@ int CItem::OnTakeDamage( int iDmg, CChar * pSrc, DAMAGE_TYPE uType )
     if (fHasMaxHits && (m_itArmor.m_wHitsMax > 0))
     {
         const int64 iSelfRepair = GetDefNum("SELFREPAIR", true);
-        if (iSelfRepair > g_Rand.GetVal(10))
+        if (iSelfRepair > g_Rand.GetVal(100))
         {
             const ushort uiOldHits = m_itArmor.m_wHitsCur;
-            m_itArmor.m_wHitsCur += 2;
+            m_itArmor.m_wHitsCur += 1;
             if (m_itArmor.m_wHitsCur > m_itArmor.m_wHitsMax)
                 m_itArmor.m_wHitsCur = m_itArmor.m_wHitsMax;
 
