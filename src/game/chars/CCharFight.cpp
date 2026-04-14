@@ -1454,7 +1454,8 @@ bool CChar::Fight_Attack( CChar *pCharTarg, bool fToldByMaster )
 	}
 	else if ( m_pNPC && !CanSee(pCharTarg) )
 	{
-		return false;
+        if (!fToldByMaster)
+            return false;
 	}
 
 	int threat = 0;

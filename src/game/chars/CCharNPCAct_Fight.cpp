@@ -205,7 +205,14 @@ void CChar::NPC_Act_Fight()
     ASSERT(m_pNPC);
 
     // I am in an attack mode.
-    if (!Fight_IsActive())
+    // While casting (SKF_MAGIC), Fight_IsActive() returns false because casting skills are not SKF_FIGHT.
+    // Keep combat state during spellcasting, otherwise NPCs clear fight data right after starting a spell.
+    const SKILL_TYPE iActiveSkill = Skill_GetActive();
+    CChar *pCombatTarget          = m_Fight_Targ_UID.CharFind();
+    const bool fHasCombatTarget   = (pCombatTarget != nullptr);
+    const bool fCastingInCombat   = g_Cfg.IsSkillFlag(iActiveSkill, SKF_MAGIC) && IsStatFlag(STATF_WAR) && fHasCombatTarget;
+    const bool fPendingCombat     = IsStatFlag(STATF_WAR) && fHasCombatTarget;
+    if (!Fight_IsActive() && !fCastingInCombat && !fPendingCombat)
     {
         Fight_ClearAll();
         return;
@@ -228,9 +235,17 @@ void CChar::NPC_Act_Fight()
         }
     }
     */
-    CChar * pChar = m_Fight_Targ_UID.CharFind();
+    CChar *pChar = pCombatTarget;
     if (pChar == nullptr || !pChar->IsTopLevel()) // target is not valid anymore ?
-        return;
+    {
+        pChar = NPC_FightFindBestTarget();
+        if (pChar == nullptr || !pChar->IsTopLevel())
+        {
+            Fight_ClearAll();
+            return;
+        }
+        m_Fight_Targ_UID = pChar->GetUID();
+    }
 
     // If the current target cannot be attacked anymore, find a better one
     if (!pChar->Fight_IsAttackableState() || !CanSeeLOS(pChar))
@@ -253,6 +268,12 @@ void CChar::NPC_Act_Fight()
             }
             else
             {
+                if (IsStatFlag(STATF_PET))
+                {
+                    // Try to reach target instead of giving up
+                    NPC_Act_Follow(false, 1, true);
+                    return;
+                }
                 Skill_Start(SKILL_NONE);
                 StatFlag_Clear(STATF_WAR);
                 m_Fight_Targ_UID.InitUID();
@@ -440,8 +461,8 @@ void CChar::NPC_Act_Fight()
     {
         // Not a melee fighter → do NOT close in
         const int iMinRange2  = 4;
-        const int iMaxRange2 = 8;
-        if (iDist < 4)
+        const int iMaxRange2 = g_Cfg.m_iMaxSpellRange;
+        if (iDist < iMinRange2)
             NPC_Act_Follow(false, 6, true); // back off slightly
         else if (iDist > iMaxRange2)
             // Too far → move closer

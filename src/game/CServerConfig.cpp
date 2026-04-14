@@ -68,6 +68,7 @@ CServerConfig::CServerConfig()
     m_fDecimalVariables     = false; // In default, variables should return hexadecimal.
     m_iPvpReductionPercentage = 0;
     m_iPvpReductionPercentageSpell = 0;
+    m_iMaxSpellRange = 0;
 
 	//Magic
 	m_fManaLossAbort		= false;
@@ -634,6 +635,7 @@ enum RC_TYPE
 	RC_MAXSIZECLIENTIN,			// _uiMaxSizeClientIn
 	RC_MAXSIZECLIENTOUT,		// _uiMaxSizeClientOut
 	RC_MAXSIZEPERTICK,			// _uiNetMaxLengthPerTick
+    RC_MAXSPELLRANGE,          // m_iMaxSpellRange
 	RC_MD5PASSWORDS,			// m_fMd5Passwords
 	RC_MEDITATIONMOVEMENTABORT,  // _fMeditationMovementAbort
 	RC_MEDIUMCANHEARGHOSTS,		// m_iMediumCanHearGhosts
@@ -931,6 +933,7 @@ const CAssocReg CServerConfig::sm_szLoadKeys[RC_QTY + 1]
 	{ "MAXSIZECLIENTIN",		{ ELEM_INT64,	static_cast<uint>OFFSETOF(CServerConfig,_iMaxSizeClientIn)		}},
 	{ "MAXSIZECLIENTOUT",		{ ELEM_INT64,	static_cast<uint>OFFSETOF(CServerConfig,_iMaxSizeClientOut)		}},
 	{ "MAXSIZEPERTICK",			{ ELEM_INT,		static_cast<uint>OFFSETOF(CServerConfig,_uiNetMaxLengthPerTick)	}},
+    { "MAXSPELLRANGE",          { ELEM_INT,     static_cast<uint>OFFSETOF(CServerConfig,m_iMaxSpellRange) }},
 	{ "MD5PASSWORDS",			{ ELEM_BOOL,	static_cast<uint>OFFSETOF(CServerConfig,m_fMd5Passwords) 		}},
 	{ "MEDITATIONMOVEMENTABORT",{ ELEM_BOOL,	static_cast<uint>OFFSETOF(CServerConfig,_fMeditationMovementAbort)	}},
 	{ "MEDIUMCANHEARGHOSTS",	{ ELEM_INT,		static_cast<uint>OFFSETOF(CServerConfig,m_iMediumCanHearGhosts)	}},
@@ -975,8 +978,8 @@ const CAssocReg CServerConfig::sm_szLoadKeys[RC_QTY + 1]
 	{ "PLAYEREVIL",				{ ELEM_INT,		static_cast<uint>OFFSETOF(CServerConfig,m_iPlayerKarmaEvil)		}},
 	{ "PLAYERNEUTRAL",			{ ELEM_INT,		static_cast<uint>OFFSETOF(CServerConfig,m_iPlayerKarmaNeutral)	}},
 	{ "PROFILE",				{ ELEM_VOID,	0												}},
-    { "PVPREDUCTIONPERCENTAGE", { ELEM_INT,     static_cast<uint> OFFSETOF(CServerConfig,m_iPvpReductionPercentage) }},
-    { "PVPREDUCTIONPERCENTAGESPELL", { ELEM_INT, static_cast<uint> OFFSETOF(CServerConfig, m_iPvpReductionPercentageSpell) } },
+    { "PVPREDUCTIONPERCENTAGE", { ELEM_INT,     static_cast<uint>OFFSETOF(CServerConfig,m_iPvpReductionPercentage) }},
+    { "PVPREDUCTIONPERCENTAGESPELL", { ELEM_INT, static_cast<uint>OFFSETOF(CServerConfig,m_iPvpReductionPercentageSpell) }},
 	{ "RACIALFLAGS",			{ ELEM_MASK_INT,static_cast<uint>OFFSETOF(CServerConfig,m_iRacialFlags)			}},
 	{ "REAGENTLOSSABORT",		{ ELEM_BOOL,	static_cast<uint>OFFSETOF(CServerConfig,m_fReagentLossAbort)		}},
 	{ "REAGENTLOSSFAIL",		{ ELEM_BOOL,	static_cast<uint>OFFSETOF(CServerConfig,m_fReagentLossFail)		}},

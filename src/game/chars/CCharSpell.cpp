@@ -2799,6 +2799,14 @@ bool CChar::Spell_TargCheck()
                     return false;
             }
         }
+        int iDist = GetTopDist3D(pObj);
+
+        if (iDist > g_Cfg.m_iMaxSpellRange)
+        {
+            SysMessageDefault(DEFMSG_SPELL_TARG_LOS);
+            return false;
+        }
+
 		if ( !CanSeeLOS(pObj, LOS_NB_WINDOWS) ) //we should be able to cast through a window
 		{
 			SysMessageDefault( DEFMSG_SPELL_TARG_LOS );
@@ -2822,6 +2830,13 @@ bool CChar::Spell_TargCheck()
 		{
 			m_Act_p = pObjTop->GetTopPoint();
 		}
+        int iDist = GetTopPoint().GetDist3D(m_Act_p);
+
+        if (iDist > g_Cfg.m_iMaxSpellRange)
+        {
+            SysMessageDefault(DEFMSG_SPELL_TARG_LOS);
+            return false;
+        }
 		if ( ! CanSeeLOS( m_Act_p, nullptr, GetVisualRange(), LOS_NB_WINDOWS )) //we should be able to cast through a window
 		{
 			SysMessageDefault( DEFMSG_SPELL_TARG_LOS );

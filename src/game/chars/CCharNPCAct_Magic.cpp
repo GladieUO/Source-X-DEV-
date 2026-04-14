@@ -170,7 +170,7 @@ bool CChar::NPC_FightMagery(CChar * pChar)
         return false;
 
     int iDist = GetTopDist3D(pChar);
-    if (iDist > ((UO_MAP_VIEW_SIGHT * 3) / 4))	// way too far away . close in.
+    if (iDist > g_Cfg.m_iMaxSpellRange) // way too far away . close in.
         return false;
 
     if ((iDist <= 1) && (Skill_GetBase(SKILL_TACTICS) > 200) && (!g_Rand.GetVal(2)))
@@ -192,7 +192,7 @@ bool CChar::NPC_FightMagery(CChar * pChar)
         if (uiMana > (uiStatInt / 3) && g_Rand.GetVal(uiStatInt))
         {
             const int iMinRange = 4;
-            const int iMaxRange = 8;
+            const int iMaxRange = g_Cfg.m_iMaxSpellRange;
 
             if (iDist < iMinRange)
             {
@@ -269,7 +269,8 @@ bool CChar::NPC_FightMagery(CChar * pChar)
 
     if ((uiMana > uiStatInt / 3) && g_Rand.GetVal(uiStatInt << 1))
     {
-        if (iDist < 4 || iDist > 8)	// Here is fine?
+        int iMax = g_Cfg.m_iMaxSpellRange;
+        if (iDist < 4 || iDist > iMax) // Here is fine?
             NPC_Act_Follow(false, 5, true);
     }
     else

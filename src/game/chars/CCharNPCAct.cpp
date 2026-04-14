@@ -2277,6 +2277,7 @@ void CChar::NPC_OnTickAction()
 	else if (g_Cfg.IsSkillFlag(iSkillActive, SKF_MAGIC))
 	{
 		EXC_SET_BLOCK("fighting-magic");
+        fSkillFight = true;
 		NPC_Act_Fight();
 	}
 	else
@@ -2284,9 +2285,20 @@ void CChar::NPC_OnTickAction()
 		switch ( iSkillActive )
 		{
 			case SKILL_NONE:
-				// We should try to do something new.
-				EXC_SET_BLOCK("idle: Skill_None");
-				NPC_Act_Idle();
+                if (IsStatFlag(STATF_WAR) && m_Fight_Targ_UID.IsValidUID())
+                {
+                    // After spell fail/finish the skill can be reset to SKILL_NONE.
+                    // Keep combat logic running instead of dropping to idle/wander.
+                    EXC_SET_BLOCK("fight: Skill_None");
+                    fSkillFight = true;
+                    NPC_Act_Fight();
+                }
+                else
+                {
+                    // We should try to do something new.
+                    EXC_SET_BLOCK("idle: Skill_None");
+                    NPC_Act_Idle();
+                }
 				break;
 
 			case SKILL_STEALTH:
