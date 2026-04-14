@@ -2799,12 +2799,18 @@ bool CChar::Spell_TargCheck()
                     return false;
             }
         }
-        int iDist = GetTopDist3D(pObj);
+        SPELL_TYPE spell = m_atMagery.m_iSpell;
 
-        if (iDist > g_Cfg.m_iMaxSpellRange)
+        bool fIgnoreRange = (spell == SPELL_Recall || spell == SPELL_Gate_Travel);
+        if (!fIgnoreRange && pObj)
         {
-            SysMessageDefault(DEFMSG_SPELL_TARG_LOS);
-            return false;
+            int iDist = GetTopDist3D(pObj);
+
+            if (iDist > g_Cfg.m_iMaxSpellRange)
+            {
+                SysMessageDefault(DEFMSG_SPELL_TARG_LOS);
+                return false;
+            }
         }
 
 		if ( !CanSeeLOS(pObj, LOS_NB_WINDOWS) ) //we should be able to cast through a window
