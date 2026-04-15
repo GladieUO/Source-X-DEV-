@@ -2801,7 +2801,7 @@ bool CChar::Spell_TargCheck()
         }
         SPELL_TYPE spell = m_atMagery.m_iSpell;
 
-        bool fIgnoreRange = (spell == SPELL_Recall || spell == SPELL_Gate_Travel);
+        bool fIgnoreRange = (spell == SPELL_Recall || spell == SPELL_Gate_Travel || spell == SPELL_Mark);
         if (!fIgnoreRange && pObj)
         {
             int iDist = GetTopDist3D(pObj);
