@@ -1326,13 +1326,15 @@ bool CChar::NPC_Act_Follow(bool fFlee, int maxDistance, bool fMoveAway)
 	// Follow our target or owner (m_Act_UID), we may be fighting (m_Fight_Targ_UID).
 	// false = can't follow anymore, give up.
 
+	const bool fPendingCombat = IsStatFlag(STATF_WAR) && m_Fight_Targ_UID.IsValidUID();
+
 	if (Can(CAN_C_NONMOVER))
 	{
 		/*
 		  If the NPC has the MT_NONMOVER flag we need to check if it is actually in combat, otherwise it  will spam the attack because it
 		  constantly "forget" the character is attacking (See NPCAct_Fight method).
 		*/
-		if (!Fight_IsActive())
+		if (!Fight_IsActive() && !fPendingCombat)
 			return false;
 		else
 			return true;
@@ -1352,7 +1354,7 @@ bool CChar::NPC_Act_Follow(bool fFlee, int maxDistance, bool fMoveAway)
 	//If the NPC action is following somebody, directly assign the character from  the m_Act_UID value.
 	if (Skill_GetActive() == NPCACT_FOLLOW_TARG)
 		pChar = m_Act_UID.CharFind();
-    else if (Fight_IsActive() || Skill_GetActive() == NPCACT_FLEE)
+    else if (Fight_IsActive() || fPendingCombat || Skill_GetActive() == NPCACT_FLEE)
 		pChar = m_Fight_Targ_UID.IsValidUID() ? m_Fight_Targ_UID.CharFind() : m_Act_UID.CharFind();
     else
         pChar = m_Act_UID.CharFind();

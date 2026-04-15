@@ -247,6 +247,12 @@ void CChar::NPC_Act_Fight()
         m_Fight_Targ_UID = pChar->GetUID();
     }
 
+    if (!Fight_IsActive() && !g_Cfg.IsSkillFlag(iActiveSkill, SKF_MAGIC))
+    {
+        Fight_Attack(pChar);
+        return;
+    }
+
     // If the current target cannot be attacked anymore, find a better one
     if (!pChar->Fight_IsAttackableState() || !CanSeeLOS(pChar))
     {
