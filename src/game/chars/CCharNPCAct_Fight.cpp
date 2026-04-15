@@ -100,11 +100,17 @@ CChar * CChar::NPC_FightFindBestTarget(const std::vector<CChar*>* pvExcludeList)
 
     if (GetAttackersCount())
     {
-        int64 threat = 0;
+        const bool fUseThreat = ((NPC_GetAiFlags() & NPC_AI_THREAT) != 0);
+        const int THREAT_SWITCH_THRESHOLD = 300;
         int iClosest = INT32_MAX;
+        int iBestThreatDist = INT32_MAX;
+        int64 iBestThreat = INT64_MIN;
+        int64 iCurrentThreat = 0;
         CChar *pChar = nullptr;
         CChar *pClosest = nullptr;
+        CChar *pBestThreat = nullptr;
         SKILL_TYPE skillWeapon = Fight_GetWeaponSkill();
+        CChar *pCurrentTarget = m_Fight_Targ_UID.CharFind();
 
         // Do NOT use iterators here, since in this loop the m_lastAttackers vector can be altered, and so the iterator, making it invalid
         //for (std::vector<LastAttackers>::iterator it = m_lastAttackers.begin(); it != m_lastAttackers.end(); ++it)
@@ -169,20 +175,34 @@ CChar * CChar::NPC_FightFindBestTarget(const std::vector<CChar*>* pvExcludeList)
                 ++i;
                 continue;
             }
-            const int THREAT_SWITCH_THRESHOLD = 200; // switch target only if the new target has at least X more threat than the current one
-            if ((NPC_GetAiFlags() & NPC_AI_THREAT) &&
-                (refAttacker.threat > threat + THREAT_SWITCH_THRESHOLD)) // this char has more threat than others, let's switch to this target
+
+            if (fUseThreat)
             {
-                pClosest = pChar;
-                iClosest = iDist;
-                threat = refAttacker.threat;
+                const int64 iThreat = (int64)refAttacker.threat;
+                if (pChar == pCurrentTarget)
+                    iCurrentThreat = iThreat;
+
+                if (!pBestThreat || (iThreat > iBestThreat) ||
+                    ((iThreat == iBestThreat) && (pChar == pCurrentTarget)) ||
+                    ((iThreat == iBestThreat) && (pBestThreat != pCurrentTarget) && (iDist < iBestThreatDist)))
+                {
+                    pBestThreat = pChar;
+                    iBestThreat = iThreat;
+                    iBestThreatDist = iDist;
+                }
             }
-            else if (iDist < iClosest)	// this char is more closer to me than my current target, let's switch to this target
+
+            if (iDist < iClosest)	// this char is more closer to me than my current target, let's switch to this target
             {
                 pClosest = pChar;
                 iClosest = iDist;
             }
             ++i;
+        }
+        if (fUseThreat && pBestThreat)
+        {
+            if (!pCurrentTarget || (pBestThreat == pCurrentTarget) || (iBestThreat >= (iCurrentThreat + THREAT_SWITCH_THRESHOLD)))
+                return pBestThreat;
         }
         if (pClosest)
             return pClosest;
