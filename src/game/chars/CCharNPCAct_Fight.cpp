@@ -101,7 +101,6 @@ CChar * CChar::NPC_FightFindBestTarget(const std::vector<CChar*>* pvExcludeList)
     if (GetAttackersCount())
     {
         const bool fUseThreat = ((NPC_GetAiFlags() & NPC_AI_THREAT) != 0);
-        const int THREAT_SWITCH_THRESHOLD = 300;
         int iClosest = INT32_MAX;
         int iBestThreatDist = INT32_MAX;
         int64 iBestThreat = INT64_MIN;
@@ -201,8 +200,22 @@ CChar * CChar::NPC_FightFindBestTarget(const std::vector<CChar*>* pvExcludeList)
         }
         if (fUseThreat && pBestThreat)
         {
-            if (!pCurrentTarget || (pBestThreat == pCurrentTarget) || (iBestThreat >= (iCurrentThreat + THREAT_SWITCH_THRESHOLD)))
+            if (!pCurrentTarget)
                 return pBestThreat;
+
+            // If already targeting best, keep it
+            if (pBestThreat == pCurrentTarget)
+                return pCurrentTarget;
+
+            // 🔥 WoW-style switching (percentage-based)
+            const int SWITCH_PCT = 120; // 120% = must exceed by 20%
+
+            // Avoid division (safe integer math)
+            if (iBestThreat * 100 >= iCurrentThreat * SWITCH_PCT)
+                return pBestThreat;
+
+            // Otherwise, keep current target
+            return pCurrentTarget;
         }
         if (pClosest)
             return pClosest;

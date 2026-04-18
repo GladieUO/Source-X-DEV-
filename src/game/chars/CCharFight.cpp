@@ -942,20 +942,40 @@ effect_bounce:
 		{
 			if ( refAttacker.charUID == uiSrcUID )
 			{
+                int threat = maximum(0, iDmg);
+                // 🔥 Apply modifiers
+                if (pSrc->IsStatFlag(STATF_PET))
+                {
+                    threat = (threat * 120) / 100;
+                }
+                else if (pSrc->IsPlayer())
+                {
+                    threat = (threat * 70) / 100;
+                }
 				refAttacker.elapsed = 0;
 				refAttacker.amountDone += maximum( 0, iDmg );
-				refAttacker.threat += maximum( 0, iDmg );
+                refAttacker.threat += threat;
                 fAttackerExists = true;
 				break;
 			}
 		}
         if (fAttackerExists == false)
 		{
+            int threat = maximum(0, iDmg);
+            // 🔥 Apply modifiers
+            if (pSrc->IsStatFlag(STATF_PET))
+            {
+                threat = (threat * 120) / 100;
+            }
+            else if (pSrc->IsPlayer())
+            {
+                threat = (threat * 60) / 100;
+            }
 			LastAttackers attacker;
 			attacker.charUID = uiSrcUID;
 			attacker.elapsed = 0;
 			attacker.amountDone = maximum( 0, iDmg );
-			attacker.threat = maximum( 0, iDmg );
+            attacker.threat     = threat;
 			attacker.ignore = false;
 			m_lastAttackers.emplace_back(std::move(attacker));
 		}
