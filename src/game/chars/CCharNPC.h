@@ -22,6 +22,8 @@ class CCharNPC
 {
 	// This is basically the unique "brains" for any character.
 public:
+    int m_iStuckCount;
+    CPointMap m_ptLastStuckCheck;
 	static const char *m_sClassName;
 	// Stuff that is specific to an NPC character instance (not an NPC type see CCharBase for that).
 	// Any NPC AI stuff will go here.

@@ -1576,11 +1576,26 @@ void CChar::NPC_Act_GoHome()
 	}
 
    	m_Act_p = m_ptHome;
-   	if ( !NPC_WalkToPoint() ) // get there
-   	{
-   		Skill_Start(SKILL_NONE);
-		return;
-	}
+    bool fNoMovement = (GetTopPoint() == m_pNPC->m_ptLastStuckCheck);
+
+    if (!NPC_WalkToPoint() || fNoMovement)
+        ++m_pNPC->m_iStuckCount;
+    else
+        m_pNPC->m_iStuckCount = 0;
+
+    m_pNPC->m_ptLastStuckCheck = GetTopPoint();
+
+    if (m_pNPC->m_iStuckCount >= 20)
+    {
+        if (!Fight_IsActive())
+        {
+            Spell_Teleport(m_ptHome, true, false);
+
+            m_pNPC->m_iStuckCount = 0;
+            Skill_Start(SKILL_NONE);
+            return;
+        }
+    }
 }
 
 void CChar::NPC_LootMemory( CItem * pItem )
