@@ -1575,23 +1575,36 @@ void CChar::NPC_Act_GoHome()
 		}
 	}
 
-   	m_Act_p = m_ptHome;
-    bool fNoMovement = (GetTopPoint() == m_pNPC->m_ptLastStuckCheck);
+m_Act_p = m_ptHome;
 
-    if (!NPC_WalkToPoint() || fNoMovement)
+    bool fMoved = NPC_WalkToPoint();
+
+    // Check if NPC is actually getting closer to target
+    int iDistNow = GetTopPoint().GetDist(m_Act_p);
+
+    // Count as stuck if:
+    // - failed to move
+    // - OR not getting closer
+    if (!fMoved || iDistNow >= m_pNPC->m_iLastStuckDist)
+    {
         ++m_pNPC->m_iStuckCount;
+    }
     else
+    {
         m_pNPC->m_iStuckCount = 0;
+    }
 
-    m_pNPC->m_ptLastStuckCheck = GetTopPoint();
+    // Save current distance
+    m_pNPC->m_iLastStuckDist = iDistNow;
 
     if (m_pNPC->m_iStuckCount >= 20)
     {
         if (!Fight_IsActive())
         {
             Spell_Teleport(m_ptHome, true, false);
+            m_pNPC->m_iStuckCount    = 0;
+            m_pNPC->m_iLastStuckDist = INT_MAX;
 
-            m_pNPC->m_iStuckCount = 0;
             Skill_Start(SKILL_NONE);
             return;
         }
