@@ -618,8 +618,8 @@ int CChar::NPC_WalkToPoint( bool fRun )
         {
             if (IsStatFlag(STATF_PET)) // pets run a little faster.
             {
-                if (iDex < 75)
-                    iDex = 75;
+                if (iDex < 100)
+                    iDex = 100;
             }
             iTickNext = MSECS_PER_SEC / 4 + g_Rand.GetValFast((100 - iDex) / 20) * 10;
         }
