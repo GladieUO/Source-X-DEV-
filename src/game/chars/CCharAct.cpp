@@ -6071,25 +6071,35 @@ bool CChar::_OnTick()
     EXC_SET_BLOCK("Timer expired");
     OnTickSkill();
 
-    if (m_pNPC)
+if (m_pNPC)
     {
         const ProfileTask aiTask(PROFILE_NPC_AI);
         EXC_SET_BLOCK("NPC action");
-        if (!IsStatFlag(STATF_FREEZE|STATF_STONE) && !Can(CAN_C_STATUE))
+
+        const bool fIsFrozen = IsStatFlag(STATF_FREEZE);
+        bool fCanTickNPC     = !IsStatFlag(STATF_STONE) && !Can(CAN_C_STATUE);
+
+        if (fCanTickNPC && fIsFrozen)
+        {
+            if (!IsSetCombatFlags(COMBAT_PARALYZE_CANSWING) && !IsSetMagicFlags(MAGICF_CASTPARALYZED))
+            {
+                fCanTickNPC = false;
+            }
+        }
+
+        if (fCanTickNPC)
         {
             NPC_OnTickAction();
 
-            if (!IsStatFlag(STATF_DEAD))
+            if (!IsStatFlag(STATF_DEAD) && !fIsFrozen)
             {
                 const int iFlags = NPC_GetAiFlags();
+
                 if ((iFlags & NPC_AI_FOOD) && !(iFlags & NPC_AI_INTFOOD))
-                {
                     NPC_Food();
-                }
+
                 if (iFlags & NPC_AI_EXTRA)
-                {
                     NPC_ExtraAI();
-                }
             }
         }
     }
