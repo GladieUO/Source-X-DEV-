@@ -103,6 +103,7 @@ CChar * CChar::NPC_FightFindBestTarget(const std::vector<CChar*>* pvExcludeList)
         const bool fUseThreat = ((NPC_GetAiFlags() & NPC_AI_THREAT) != 0);
         int iClosest = INT32_MAX;
         int iBestThreatDist = INT32_MAX;
+        int iCurrentTargetDist = INT32_MAX;
         int64 iBestThreat = INT64_MIN;
         int64 iCurrentThreat = 0;
         CChar *pChar = nullptr;
@@ -179,7 +180,10 @@ CChar * CChar::NPC_FightFindBestTarget(const std::vector<CChar*>* pvExcludeList)
             {
                 const int64 iThreat = (int64)refAttacker.threat;
                 if (pChar == pCurrentTarget)
+                {
                     iCurrentThreat = iThreat;
+                    iCurrentTargetDist = iDist;
+                }
 
                 if (!pBestThreat || (iThreat > iBestThreat) ||
                     ((iThreat == iBestThreat) && (pChar == pCurrentTarget)) ||
@@ -209,9 +213,19 @@ CChar * CChar::NPC_FightFindBestTarget(const std::vector<CChar*>* pvExcludeList)
 
             // 🔥 WoW-style switching (percentage-based)
             const int SWITCH_PCT = 120; // 120% = must exceed by 20%
+            const int DISTANCE_PCT_PER_TILE = 5;
+            const int MAX_DISTANCE_PCT = 30;
+            int iDistancePct = 0;
+            if ((iCurrentTargetDist != INT32_MAX) && (iBestThreatDist > iCurrentTargetDist))
+            {
+                iDistancePct = (iBestThreatDist - iCurrentTargetDist) * DISTANCE_PCT_PER_TILE;
+                if (iDistancePct > MAX_DISTANCE_PCT)
+                    iDistancePct = MAX_DISTANCE_PCT;
+            }
+            const int iRequiredPct = SWITCH_PCT + iDistancePct;
 
             // Avoid division (safe integer math)
-            if (iBestThreat * 100 >= iCurrentThreat * SWITCH_PCT)
+            if (iBestThreat * 100 >= iCurrentThreat * iRequiredPct)
                 return pBestThreat;
 
             // Otherwise, keep current target
