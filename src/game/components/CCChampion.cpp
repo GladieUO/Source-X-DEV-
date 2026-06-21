@@ -427,9 +427,6 @@ void CCChampion::AddRedCandle(const CUID& uid)
         return;
     }
 
-    if (_pRedCandles.size() >= _iCandlesNextLevel)
-        SetLevel(_iLevel + 1);
-
     if (_iLevel >= _iLevelMax)
         return;
 
@@ -535,6 +532,12 @@ void CCChampion::AddRedCandle(const CUID& uid)
 
     _pRedCandles.emplace_back(pCandle->GetUID());
     pCandle->m_uidLink = pLink->GetUID();
+
+    // Advance to the next NPC wave as soon as the last required red candle
+    // for this level is actually added. The boss phase is still controlled by
+    // the total death count cap in OnKill().
+    if (_iLevel < (_iLevelMax - 1) && (_pRedCandles.size() >= _iCandlesNextLevel))
+        SetLevel(_iLevel + 1);
 }
 
 void CCChampion::SetLevel(byte iLevel)
@@ -548,7 +551,8 @@ void CCChampion::SetLevel(byte iLevel)
         _iLevel = 1;
 
     ushort iLevelMonsters = GetMonstersCount();
-    _iCandlesNextLevel += GetCandlesCount();
+    const uchar iLevelCandles = GetCandlesCount();
+    _iCandlesNextLevel += iLevelCandles;
 
     if (IsTrigUsed(TRIGGER_LEVEL))
     {
@@ -571,7 +575,10 @@ void CCChampion::SetLevel(byte iLevel)
     if (_iCandlesNextLevel == 0)
         _iCandlesNextLevel = 1;
 
-    ushort iRedMonsters = (ushort)(iLevelMonsters / _iCandlesNextLevel);
+    // Split the current level monster budget across this level's red candles.
+    // _iCandlesNextLevel is cumulative and is only meant for level transition checks.
+    const uchar iCandlesForLevel = (iLevelCandles > 0) ? iLevelCandles : 1;
+    ushort iRedMonsters = (ushort)(iLevelMonsters / iCandlesForLevel);
 
     // At least one "full red chunk" must always be big enough
     if (iRedMonsters < (CANDLESNEXTRED + 1))
@@ -591,24 +598,24 @@ void CCChampion::InitializeLists()
 {
     ADDTOCALLSTACK("CCChampion::InitializeLists");
 
-    /*
-    * As we have _iLevelMax overrideable, we can't use static switch for it.
-    * The closest algorithm I could fine for it is;
-    * [(100 / _iLevelMax) / (_iLevel - 1)] + (_iLevelMax - _iLevel)
-    */
+    // Distribute monsters using descending stage weights. With four pre-boss
+    // stages this produces 40%, 30%, 20%, and 10%.
     _MonstersList.clear();
     _CandleList.clear();
 
-    uchar uiPerc = 100 / _iLevelMax;
-    uchar uiMonsterTotal = 0;
+    const uint uiStageCount = (_iLevelMax > 1) ? (_iLevelMax - 1) : 1;
+    const uint uiTotalWeight = (uiStageCount * (uiStageCount + 1)) / 2;
+    uint uiMonsterTotal = 0;
     uchar uiCandleTotal = 0;
-    for (uchar i = (_iLevelMax - 2); i > 0; --i)
+    for (uint i = 0; i < uiStageCount; ++i)
     {
-        uchar uiMonster = (uiPerc / i) + (_iLevelMax - (i + 1));
-        _MonstersList.insert(_MonstersList.begin(), uiMonster); // Push the value from beginning.
+        const uint uiWeight = uiStageCount - i;
+        const uchar uiMonster = (i + 1 == uiStageCount)
+            ? (uchar)(100 - uiMonsterTotal)
+            : (uchar)((100 * uiWeight) / uiTotalWeight);
+        _MonstersList.emplace_back(uiMonster);
         uiMonsterTotal += uiMonster;
     }
-    _MonstersList.insert(_MonstersList.begin(), (100 - uiMonsterTotal)); // Push the left over as first element.
 
     for (uchar i = (_iLevelMax - 1); i > 1; --i)
     {
@@ -759,7 +766,6 @@ void CCChampion::DelObj(const CUID& uid)
         // Should it called in any time? As DelObj called when obj deleting?
         CScript s("-e_spawn_champion");//Removing it here just for safety, preventing any additional DelObj being called from the trigger and causing an infinite loop.
         pChar->m_OEvents.r_LoadVal(s, RES_EVENTS);  //removing event from the char.
-        OnKill(uid);
     }
     //Not checking HP or anything else, an NPC was created and counted so killing, removing or just taking it out of the lists counts towards the progression.
     OnKill(uid);
