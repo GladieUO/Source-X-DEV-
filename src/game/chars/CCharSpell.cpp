@@ -3747,19 +3747,20 @@ bool CChar::OnSpellEffect( SPELL_TYPE spell, CChar * pCharSrc, int iSkillLevel, 
         }
         else
         {
-            // Evaluating Intelligence mult
-            iEffect *= ((pCharSrc->Skill_GetBase(SKILL_EVALINT) * 2) / 1000) + 1;
+            // Compensate direct damage spells for replacing the old Eval INT multiplier.
+            if (!pSpellDef->IsSpellType(SPELLFLAG_FIELD) && !pSpellDef->IsSpellType(SPELLFLAG_AREA))
+                iEffect *= 2;
 
             // Spell Damage Increase bonus
             int DamageBonus = (int)(pCharSrc->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASESPELLDAM, true));
             if (m_pPlayer && pCharSrc->m_pPlayer && DamageBonus > 70)		// Spell Damage Increase is capped at 70% on PvP
                 DamageBonus = 70;
+            DamageBonus *= 2;
 
-            // INT bonus
-            DamageBonus += pCharSrc->Stat_GetAdjusted(STAT_INT) / 10;
-
-            // Inscription bonus
-            DamageBonus += pCharSrc->Skill_GetBase(SKILL_INSCRIPTION) / 100;
+            DamageBonus += pCharSrc->Skill_GetBase(SKILL_EVALINT) / 50;       // Up to 20% at GM.
+            DamageBonus += pCharSrc->Skill_GetBase(SKILL_MAGERY) / 100;       // Up to 10% at GM.
+            DamageBonus += pCharSrc->Stat_GetAdjusted(STAT_INT) / 10;          // 1% per 10 INT.
+            DamageBonus += pCharSrc->Skill_GetBase(SKILL_INSCRIPTION) / 100;  // Up to 10% at GM.
 
             // Racial Bonus (Berserk), gargoyles gains +3% Spell Damage Increase per each 20 HP lost
             if ((g_Cfg.m_iRacialFlags & RACIALF_GARG_BERSERK) && IsGargoyle())
