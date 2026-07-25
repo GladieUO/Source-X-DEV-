@@ -4095,8 +4095,6 @@ When setting a property like MORE to the a spell or skill defname, trying to rea
 - Fixed: Malformed spell flags being returned via scripts.
 - Fixed: REGION ISEVENT didn't (always?) find REGIONTYPES.
 
-25-11-2025, canerksk
-- Fixed: Fixed the issue where some items (hair, beard, etc.) were counted as items inside the corpse (Issue #1189).
 09-03-2026, Mulambo
 - Changed: Debug DEBUGF_WALK now works only for players (was for monster too), to increase readility in logs.
 - Changed: Improved OpenDoor Macro (Issue #1510) to use following formula with priorities (1 is best, 5 is worst, arrow is player facing):
@@ -4122,3 +4120,27 @@ When setting a property like MORE to the a spell or skill defname, trying to rea
   - Fixed: Hit chance to paralyzed targets with sphere custom (0) formula is now 80-100% (was 0-10%).
   - Added: Implemented Hit chance increase / decrease to sphere custom formula (0).
 - Fixed: Equiping armor and weapon with spelleffect could crash the SphereServer (#1538)
+
+31-03-2026, Drk84
+- Added: New locals for the @SpellEffect/@Effect triggers:
+         local.IsSpellReflected (Read Only): Indicates if the spell was reflected because of the magic reflect flag.
+         local.BypassMagicReflection (R/W): When set to a value above 0, bypass the magic reflection.
+
+- Fixed: Poison buff was using the expired timer duration instead of the poison delay timer.
+         Notice that the delay values of poison are hardcoded and you have to use addbuff function if you change the local.delay in @SpellEffectTick/@EffectTick
+
+02-04-2026, Mulambo
+- Fixed: Timer on field spells with `SPELLFLAG_FIELD_RANDOMDECAY` was incrementally increasing for each field item created.
+
+19-05-2026, Mulambo
+- Fixed: logging telnet commands (#1580).
+- Fixed: when using invalid resource in corpses, error will be show in console (#1574).
+- Changed: PacketObjectStatus (0x11) show percentual hitpoints for items and chars, just like packet 0xA1 (Hitpoints update) (#1573).
+- Added: templates can now be used when carving corpses (#1574).
+
+19-05-2026, nightNR
+- Fixed: pre-AOS armor rating (AR) calculation (#1550).
+- Fixed NPCs can't cast spells from spellbook after respawn (#1551).
+
+23-07-2026, canerksk
+- Added: New local variable local.Sound to @SpellFail/@Fail triggers (R/W). If you set local.sound = 0, no sound will be played.
