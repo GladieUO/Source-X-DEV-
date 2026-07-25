@@ -3757,8 +3757,8 @@ bool CChar::OnSpellEffect( SPELL_TYPE spell, CChar * pCharSrc, int iSkillLevel, 
                 DamageBonus = 70;
             DamageBonus *= 2;
 
-            DamageBonus += pCharSrc->Skill_GetBase(SKILL_EVALINT) / 50;       // Up to 20% at GM.
-            DamageBonus += pCharSrc->Skill_GetBase(SKILL_MAGERY) / 100;       // Up to 10% at GM.
+            DamageBonus += pCharSrc->Skill_GetBase(SKILL_EVALINT) / 100;       // Up to 20% at GM.
+            DamageBonus += pCharSrc->Skill_GetBase(SKILL_MAGERY) / 50;       // Up to 10% at GM.
             DamageBonus += pCharSrc->Stat_GetAdjusted(STAT_INT) / 10;          // 1% per 10 INT.
             DamageBonus += pCharSrc->Skill_GetBase(SKILL_INSCRIPTION) / 100;  // Up to 10% at GM.
 
