@@ -20,6 +20,59 @@
 //////////////////////////
 // CChar
 
+namespace
+{
+    constexpr lpctstr NPC_AI_DETECTHIDDEN_UNTIL = "NPC_AI_DETECTHIDDEN_UNTIL";
+    constexpr lpctstr NPC_AI_HIDING_UNTIL = "NPC_AI_HIDING_UNTIL";
+    constexpr int64 NPC_AI_WANDER_DETECTHIDDEN_COOLDOWN = 50; // tenths of second
+    constexpr int64 NPC_AI_WANDER_HIDING_COOLDOWN = 100;      // tenths of second
+
+    bool NPC_IsMonsterBrain(const CChar* pChar)
+    {
+        if (!pChar || !pChar->m_pNPC)
+            return false;
+        return (pChar->m_pNPC->m_Brain == NPCBRAIN_MONSTER) ||
+            (pChar->m_pNPC->m_Brain == NPCBRAIN_DRAGON) ||
+            (pChar->m_pNPC->m_Brain == NPCBRAIN_BERSERK);
+    }
+
+    int NPC_GetOverrideChance(const CChar* pChar, lpctstr pszKey, int iDefault)
+    {
+        const CVarDefCont* pOverride = pChar->GetKey(pszKey, true);
+        return std::clamp((int)(pOverride ? pOverride->GetValNum() : iDefault), 0, 100);
+    }
+
+    int64 NPC_GetOverrideCooldown(const CChar* pChar, lpctstr pszKey, int64 iDefault)
+    {
+        const CVarDefCont* pOverride = pChar->GetKey(pszKey, true);
+        return maximum((int64)0, pOverride ? pOverride->GetValNum() : iDefault);
+    }
+
+    bool NPC_AIIsCooldownReady(const CChar* pChar, lpctstr pszKey, int64 iNow)
+    {
+        return pChar->GetKeyNum(pszKey) <= iNow;
+    }
+
+    void NPC_AISetCooldown(CChar* pChar, lpctstr pszKey, int64 iNow, int64 iCooldown)
+    {
+        pChar->SetKeyNum(pszKey, iNow + iCooldown);
+    }
+
+    void NPC_PrimeStealthSteps(CChar* pChar)
+    {
+        if (!pChar || !pChar->IsStatFlag(STATF_HIDDEN) || (pChar->m_StepStealth > 0))
+            return;
+
+        const ushort uiStealth = pChar->Skill_GetBase(SKILL_STEALTH);
+        if (!uiStealth)
+            return;
+
+        const CVarDefCont* pOverride = pChar->GetKey("OVERRIDE.AI_STEALTH_STEPS", true);
+        const int iSteps = pOverride ? (int)pOverride->GetValNum() : maximum(1, uiStealth / 50);
+        pChar->m_StepStealth = maximum(1, iSteps);
+    }
+}
+
 enum NV_TYPE
 {
 	NV_BUY,
@@ -1255,6 +1308,41 @@ void CChar::NPC_Act_Wander()
 			iStopWandering = 2;		// I'm stopping to wander because I have seen something interesting.
 	}
 
+    if (!iStopWandering && NPC_IsMonsterBrain(this) && !IsStatFlag(STATF_WAR))
+    {
+        const int64 iNow = CWorldGameTime::GetCurrentTime().GetTimeRaw() / MSECS_PER_TENTH;
+
+        const int iDetectChance = NPC_GetOverrideChance(this, "OVERRIDE.AI_DETECTHIDDEN_CHANCE", 3);
+        if (iDetectChance && Skill_GetBase(SKILL_DETECTINGHIDDEN) &&
+            NPC_AIIsCooldownReady(this, NPC_AI_DETECTHIDDEN_UNTIL, iNow) &&
+            ((int)uiRand < iDetectChance))
+        {
+            const int64 iCooldown = NPC_GetOverrideCooldown(this, "OVERRIDE.AI_DETECTHIDDEN_COOLDOWN", NPC_AI_WANDER_DETECTHIDDEN_COOLDOWN);
+            NPC_AISetCooldown(this, NPC_AI_DETECTHIDDEN_UNTIL, iNow, iCooldown);
+            Skill_Start(SKILL_DETECTINGHIDDEN);
+            return;
+        }
+
+        if (IsStatFlag(STATF_HIDDEN))
+        {
+            NPC_PrimeStealthSteps(this);
+        }
+        else
+        {
+            const int iHidingChance = NPC_GetOverrideChance(this, "OVERRIDE.AI_HIDING_CHANCE", 5);
+            if (iHidingChance && Skill_GetBase(SKILL_HIDING) &&
+                NPC_AIIsCooldownReady(this, NPC_AI_HIDING_UNTIL, iNow) &&
+                ((int)uiRand < iHidingChance) &&
+                (!m_pArea || !m_pArea->IsGuarded()))
+            {
+                const int64 iCooldown = NPC_GetOverrideCooldown(this, "OVERRIDE.AI_HIDING_COOLDOWN", NPC_AI_WANDER_HIDING_COOLDOWN);
+                NPC_AISetCooldown(this, NPC_AI_HIDING_UNTIL, iNow, iCooldown);
+                Skill_Start(SKILL_HIDING);
+                return;
+            }
+        }
+    }
+
 	// Staggering Walk around.
 	m_Act_p = GetTopPoint();
     m_Act_p.Move( GetDirTurn(m_dirFace, 1 - (uiRand % 3u)) );
@@ -2337,6 +2425,13 @@ void CChar::NPC_OnTickAction()
 				EXC_SET_BLOCK("look around");
 				if ( NPC_LookAround())
 					break;
+                if (!IsStatFlag(STATF_WAR) && IsStatFlag(STATF_HIDDEN) && Skill_GetBase(SKILL_STEALTH) && NPC_IsMonsterBrain(this))
+                {
+                    EXC_SET_BLOCK("hidden: stealth wander");
+                    NPC_PrimeStealthSteps(this);
+                    Skill_Start(NPCACT_WANDER);
+                    break;
+                }
 				// just remain hidden unless we find something new to do.
 				if ( g_Rand.GetVal( Skill_GetBase(SKILL_HIDING)))
 					break;
