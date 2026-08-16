@@ -745,7 +745,7 @@ int CChar::NPC_GetHostilityLevelToward( const CChar * pCharTarg ) const
 		return iHostility;
 	}
 
-	short iKarma = GetKarma();
+	int iKarma = GetKarma();
 
 	bool fDoMemBase = false;
 
@@ -883,6 +883,7 @@ int CChar::NPC_GetAttackContinueMotivation( CChar * pChar, int iMotivation ) con
 	return iMotivation;
 }
 
+
 int CChar::NPC_GetAttackMotivation( CChar * pChar, int iMotivation ) const
 {
 	ADDTOCALLSTACK("CChar::NPC_GetAttackMotivation");
@@ -918,4 +919,3 @@ int CChar::NPC_GetAttackMotivation( CChar * pChar, int iMotivation ) const
 
 	return iMotivation;
 }
-

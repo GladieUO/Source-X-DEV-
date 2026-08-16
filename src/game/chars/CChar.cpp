@@ -319,7 +319,7 @@ CChar::CChar( CREID_TYPE baseID ) :
     CChar::SetName( pCharDef->GetTypeName());	// set the name in case there is a name template.
 
     Stat_SetVal( STAT_FOOD, Stat_GetMaxAdjusted(STAT_FOOD) );
-    m_uiFame = 0;
+    m_iFame = 0;
     m_iKarma = 0;
 
 	m_Act_Difficulty = 0;
@@ -2614,7 +2614,7 @@ do_default:
 			{
                 if (ptcKey[4] != '.')
                 {
-                    sVal.FormatUSVal(GetFame());
+                    sVal.FormatVal(GetFame());
                     break;
                 }
 
@@ -2710,7 +2710,7 @@ do_default:
 			{
                 if (ptcKey[5] != '.')
                 {
-                    sVal.FormatSVal(GetKarma());
+                    sVal.FormatVal(GetKarma());
                     break;
                 }
 
@@ -2728,7 +2728,7 @@ do_default:
 				tchar * pszKarmaAt0 = new tchar[uiLen];
 				Str_CopyLimitNull(pszKarmaAt0, pKarmaAt0->GetBuffer(), uiLen);
 
-				short iKarma = GetKarma();
+				int iKarma = GetKarma();
 
 				int i = Str_ParseCmds( pszKarmaAt0, ppLevel_sep, ARRAY_COUNT(ppLevel_sep), "," ) - 1; //range
 				for (;;)
@@ -3947,11 +3947,11 @@ bool CChar::r_LoadVal( CScript & s )
 		}
         case CHC_OFAME:
 		case CHC_FAME:
-            SetFame(s.GetArgUSVal());
+            SetFame(s.GetArgVal());
             break;
         case CHC_OKARMA:
 		case CHC_KARMA:
-			SetKarma(s.GetArgSVal());
+			SetKarma(s.GetArgVal());
             break;
 		case CHC_SKILLUSEQUICK:
 			{
@@ -5358,4 +5358,3 @@ uint CChar::GetSkillTotal(int what, bool how)
 
 	return uiTotal;
 }
-

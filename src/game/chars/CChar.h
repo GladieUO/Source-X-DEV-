@@ -197,8 +197,8 @@ public:
         int64   m_regenLast; // Time of the last regen.
 	} m_Stat[STAT_QTY];
 
-    short m_iKarma;
-    ushort m_uiFame;
+    int m_iKarma;
+    int m_iFame;
 
 	// Some character action in progress.
 	SKILL_TYPE	m_Act_SkillCurrent;	// Currently using a skill. Could be combat skill.
@@ -483,10 +483,10 @@ public:
     void Stats_SetRegenRate(STAT_TYPE iStat, int64 iRateMilliseconds);
 	SKILLLOCK_TYPE Stat_GetLock(STAT_TYPE stat);
 	void Stat_SetLock(STAT_TYPE stat, SKILLLOCK_TYPE state);
-    short GetKarma() const;
-    void SetKarma(short iNewKarma, CChar* pNPC = nullptr);
-    ushort GetFame() const;
-    void SetFame(ushort uiNewFame, CChar* pNPC = nullptr);
+    int GetKarma() const;
+    void SetKarma(int iNewKarma, CChar* pNPC = nullptr);
+    int GetFame() const;
+    void SetFame(int iNewFame, CChar* pNPC = nullptr);
 
 	void Stat_StrCheckEquip();
 

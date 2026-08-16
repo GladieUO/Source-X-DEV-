@@ -308,6 +308,7 @@ bool CImportFile::ImportSCP( CScript & s, word wModeFlags )
 	return true;
 }
 
+
 bool CImportFile::ImportWSC( CScript & s, word wModeFlags, short dx, short dy )
 {
 	ADDTOCALLSTACK("CImportFile::ImportWSC");
@@ -657,7 +658,7 @@ bool CImportFile::ImportWSC( CScript & s, word wModeFlags, short dx, short dy )
 			}
 			else if ( s.IsKey("KARMA" ))
 			{
-                std::optional<short> iconv = Str_ToI16(pArg);
+                std::optional<int> iconv = Str_ToI(pArg);
                 if (!iconv.has_value())
                     return false;
 
@@ -666,7 +667,7 @@ bool CImportFile::ImportWSC( CScript & s, word wModeFlags, short dx, short dy )
 			}
 			else if ( s.IsKey("FAME" ))
 			{
-                std::optional<ushort> iconv = Str_ToU16(pArg);
+                std::optional<int> iconv = Str_ToI(pArg);
                 if (!iconv.has_value())
                     return false;
 
@@ -939,4 +940,3 @@ bool CWorld::Export( lpctstr pszFilename, const CChar * pSrc, word wModeFlags, i
 
 	return true;
 }
-

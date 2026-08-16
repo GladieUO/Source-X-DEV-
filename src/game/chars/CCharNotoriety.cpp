@@ -18,7 +18,7 @@ bool CChar::Noto_IsMurderer() const noexcept
 bool CChar::Noto_IsEvil() const
 {
 	ADDTOCALLSTACK("CChar::Noto_IsEvil");
-	short iKarma = GetKarma();
+	int iKarma = GetKarma();
 
 	//	guarded areas could be both RED and BLUE ones.
 	if ( m_pArea && m_pArea->IsGuarded() && m_pArea->m_TagDefs.GetKeyNum("RED") )
@@ -78,7 +78,7 @@ bool CChar::Noto_IsNeutral() const
 {
 	ADDTOCALLSTACK("CChar::Noto_IsNeutral");
 	// Should neutrality change in guarded areas ?
-	short iKarma = GetKarma();
+	int iKarma = GetKarma();
 	switch ( GetNPCBrainGroup() )
 	{
 		case NPCBRAIN_MONSTER:
@@ -343,12 +343,12 @@ int CChar::Noto_GetLevel() const
 	ADDTOCALLSTACK("CChar::Noto_GetLevel");
 
 	size_t i = 0;
-	short iKarma = GetKarma();
+	int iKarma = GetKarma();
 	for ( ; i < g_Cfg.m_NotoKarmaLevels.size() && iKarma < g_Cfg.m_NotoKarmaLevels[i]; ++i )
 		;
 
 	size_t j = 0;
-	const ushort uiFame = GetFame();
+	const int uiFame = GetFame();
 	for ( ; j < g_Cfg.m_NotoFameLevels.size() && uiFame > g_Cfg.m_NotoFameLevels[j]; ++j )
 		;
 
@@ -505,7 +505,7 @@ void CChar::Noto_Fame( int iFameChange, CChar* pNPC )
 	//if ( ! iFameChange )
 	//	return;
 
-	SetFame((ushort)(iFame + iFameChange), pNPC);
+	SetFame(iFame + iFameChange, pNPC);
     Noto_ChangeDeltaMsg( (int)GetFame() - iFame, g_Cfg.GetDefaultMsg( DEFMSG_NOTO_FAME ) );
 }
 
@@ -543,7 +543,7 @@ void CChar::Noto_Karma( int iKarmaChange, int iBottom, bool fMessage, CChar* pNP
 	//if ( ! iKarmaChange )
 	//	return;
 
-    SetKarma((short)(iKarma + iKarmaChange), pNPC);
+    SetKarma(iKarma + iKarmaChange, pNPC);
     Noto_ChangeDeltaMsg( (int)GetKarma() - iKarma, g_Cfg.GetDefaultMsg( DEFMSG_NOTO_KARMA ) );
 	NotoSave_Update();
 	if ( fMessage == true )

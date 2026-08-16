@@ -650,12 +650,12 @@ void CChar::Stat_SetLock(STAT_TYPE stat, SKILLLOCK_TYPE state)
 	return m_pPlayer->Stat_SetLock(stat,state);
 }
 
-short CChar::GetKarma() const
+int CChar::GetKarma() const
 {
-    return (short)std::clamp((int)m_iKarma, g_Cfg.m_iMinKarma, g_Cfg.m_iMaxKarma);
+    return std::clamp(m_iKarma, g_Cfg.m_iMinKarma, g_Cfg.m_iMaxKarma);
 }
 
-void CChar::SetKarma(short iNewKarma, CChar* pNPC)
+void CChar::SetKarma(int iNewKarma, CChar* pNPC)
 {
 	/*
     Issue: 1118
@@ -668,8 +668,8 @@ void CChar::SetKarma(short iNewKarma, CChar* pNPC)
 	xwerswoodx
 	*/
 
-    const short iOldKarma = GetKarma();
-	short iKarmaChange = iNewKarma - iOldKarma;
+    const int iOldKarma = GetKarma();
+	int iKarmaChange = iNewKarma - iOldKarma;
 
 	if (IsTrigUsed(TRIGGER_KARMACHANGE))
 	{
@@ -678,22 +678,22 @@ void CChar::SetKarma(short iNewKarma, CChar* pNPC)
         TRIGRET_TYPE retType = OnTrigger(CTRIG_KarmaChange, pScriptArgs, this);
 		if (retType == TRIGRET_RET_TRUE)
 			return;
-        iKarmaChange = (short)pScriptArgs->m_iN1;
-        iNewKarma = (short)(maximum(g_Cfg.m_iMinKarma, minimum(g_Cfg.m_iMaxKarma, iOldKarma + iKarmaChange)));
+        iKarmaChange = (int)pScriptArgs->m_iN1;
+        iNewKarma = maximum(g_Cfg.m_iMinKarma, minimum(g_Cfg.m_iMaxKarma, iOldKarma + iKarmaChange));
 	}
 
-    m_iKarma = (short)(maximum(g_Cfg.m_iMinKarma, minimum(g_Cfg.m_iMaxKarma, iNewKarma)));
+    m_iKarma = maximum(g_Cfg.m_iMinKarma, minimum(g_Cfg.m_iMaxKarma, iNewKarma));
 
     if ( !g_Serv.IsLoadingGeneric() )
         NotoSave_Update();
 }
 
-ushort CChar::GetFame() const
+int CChar::GetFame() const
 {
-    return (ushort)(minimum(g_Cfg.m_iMaxFame, m_uiFame));
+    return maximum(0, minimum(g_Cfg.m_iMaxFame, m_iFame));
 }
 
-void CChar::SetFame(ushort uiNewFame, CChar* pNPC)
+void CChar::SetFame(int iNewFame, CChar* pNPC)
 {
     /*
     Issue: 1118
@@ -706,8 +706,8 @@ void CChar::SetFame(ushort uiNewFame, CChar* pNPC)
 	xwerswoodx
 	*/
 
-    const short iOldFame = GetFame();
-	short iFameChange = uiNewFame - iOldFame;
+    const int iOldFame = GetFame();
+	int iFameChange = iNewFame - iOldFame;
 
 	if (IsTrigUsed(TRIGGER_FAMECHANGE))
 	{
@@ -716,11 +716,11 @@ void CChar::SetFame(ushort uiNewFame, CChar* pNPC)
         TRIGRET_TYPE retType = OnTrigger(CTRIG_FameChange, pScriptArgs, this);
 		if (retType == TRIGRET_RET_TRUE)
 			return;
-        iFameChange = (short)pScriptArgs->m_iN1;
-        uiNewFame = (short)(maximum(0, minimum(g_Cfg.m_iMaxFame, iOldFame + iFameChange)));
+        iFameChange = (int)pScriptArgs->m_iN1;
+        iNewFame = maximum(0, minimum(g_Cfg.m_iMaxFame, iOldFame + iFameChange));
 	}
 
-    m_uiFame = (short)(maximum(0, minimum(g_Cfg.m_iMaxFame, uiNewFame)));
+    m_iFame = maximum(0, minimum(g_Cfg.m_iMaxFame, iNewFame));
 }
 
 bool CChar::Stat_Decrease(STAT_TYPE stat, SKILL_TYPE skill)
