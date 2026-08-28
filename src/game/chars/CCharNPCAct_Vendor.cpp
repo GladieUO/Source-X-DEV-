@@ -42,7 +42,7 @@ bool CChar::NPC_Vendor_Restock(bool fForce, bool fFillStock)
 		return false;
 
 	bool bRestockNow = false;
-        int64 iRestockDelay = 10 * 60 * MSECS_PER_SEC;  // 10 Minutes delay
+        int64 iRestockDelay = g_Cfg.m_iVendorRestockDelay;
 
     if ( !fForce && (CWorldGameTime::GetCurrentTime().GetTimeDiff(m_pNPC->m_timeRestock) >= 0))
 	{
@@ -52,7 +52,7 @@ bool CChar::NPC_Vendor_Restock(bool fForce, bool fFillStock)
 		{
 			CVarDefCont *vardef = region->m_TagDefs.GetKey("RestockVendors");
 			if( vardef != nullptr )
-				iRestockDelay = vardef->GetValNum() * MSECS_PER_TENTH;  // backwards: it was working on tenths in scripts before, keep it like that and update it to seconds.
+				iRestockDelay = vardef->GetValNum() * MSECS_PER_TENTH;  // Backwards compatible: REGION.TAG.RestockVendors uses tenths of a second.
 			if ( region->m_TagDefs.GetKey("NoRestock") != nullptr )
 				bRestockNow = false;
 		}

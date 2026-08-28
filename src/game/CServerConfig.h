@@ -348,6 +348,7 @@ public:
 	int  m_iBankWMax;				// Maximum weight in WEIGHT_UNITS stones allowed in bank.
     int m_iVendorMarkup;            // Default markup value, used if no other kind of tag is providen.
 	int  m_iVendorMaxSell;			// Max things a vendor will sell in one shot.
+	int64 m_iVendorRestockDelay;		// Default NPC vendor restock delay in seconds, stored as msecs.
 	uint m_iMaxCharComplexity;		// How many chars per sector.
 	uint m_iMaxItemComplexity;		// How many items per tile.
 	uint m_iMaxSectorComplexity;	// How many items per sector.

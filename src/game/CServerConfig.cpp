@@ -159,6 +159,7 @@ CServerConfig::CServerConfig()
 	m_fVendorTradeTitle		= true;
 	m_iVendorMaxSell		= 255;
 	m_iVendorMarkup			= 15;
+	m_iVendorRestockDelay	= 10ll * 60 * MSECS_PER_SEC;
 	m_iGameMinuteLength		= 20ll * MSECS_PER_SEC; // 20 seconds
 	m_fNoWeather			= true;
 	m_fFlipDroppedItems		= true;
@@ -737,6 +738,7 @@ enum RC_TYPE
 	RC_USEPACKETPRIORITY,		// m_fUsePacketPriorities
 	RC_VENDORMARKUP,			// m_iVendorMarkup
 	RC_VENDORMAXSELL,			// m_iVendorMaxSell
+	RC_VENDORRESTOCKDELAY,		// m_iVendorRestockDelay
 	RC_VENDORTRADETITLE,		// m_fVendorTradeTitle
 	RC_VERBOSEITEMBOUNCE,		// m_iBounceMessage
 	RC_VERSION,
@@ -1035,6 +1037,7 @@ const CAssocReg CServerConfig::sm_szLoadKeys[RC_QTY + 1]
 	{ "USEPACKETPRIORITY",		{ ELEM_BOOL,	static_cast<uint>OFFSETOF(CServerConfig,m_fUsePacketPriorities)	}},
 	{ "VENDORMARKUP",			{ ELEM_INT,		static_cast<uint>OFFSETOF(CServerConfig,m_iVendorMarkup)			}},
 	{ "VENDORMAXSELL",			{ ELEM_INT,		static_cast<uint>OFFSETOF(CServerConfig,m_iVendorMaxSell)		}},
+	{ "VENDORRESTOCKDELAY",		{ ELEM_INT,		static_cast<uint>OFFSETOF(CServerConfig,m_iVendorRestockDelay)		}},
 	{ "VENDORTRADETITLE",		{ ELEM_BOOL,	static_cast<uint>OFFSETOF(CServerConfig,m_fVendorTradeTitle)		}},
 	{ "VERBOSEITEMBOUNCE",		{ ELEM_BOOL,	static_cast<uint>OFFSETOF(CServerConfig,m_iBounceMessage)		}},
 	{ "VERSION",				{ ELEM_VOID,	0												}},
@@ -1444,6 +1447,9 @@ bool CServerConfig::r_LoadVal( CScript &s )
 
 		case RC_SPELLTIMEOUT:
 			m_iSpellTimeout = s.GetArgLLVal() * MSECS_PER_SEC;
+			break;
+		case RC_VENDORRESTOCKDELAY:
+			m_iVendorRestockDelay = s.GetArgLLVal() * MSECS_PER_SEC;
 			break;
 
 		case RC_SECTORSLEEP:
@@ -2323,6 +2329,9 @@ bool CServerConfig::r_WriteVal( lpctstr ptcKey, CSString & sVal, CTextConsole * 
 			break;
 		case RC_TOOLTIPCACHE:
 			sVal.FormatLLVal( m_iTooltipCache / MSECS_PER_SEC );
+			break;
+		case RC_VENDORRESTOCKDELAY:
+			sVal.FormatLLVal( m_iVendorRestockDelay / MSECS_PER_SEC );
 			break;
 		case RC_GUARDSINSTANTKILL:
 			sVal.FormatVal(m_fGuardsInstantKill);
