@@ -214,7 +214,7 @@ int CServerConfig::Calc_CombatChanceToHit(const CChar * pChar, const CChar * pCh
 		case 2:
 		{
 			int iAttackerSkill = pChar->Skill_GetBase(skillAttacker);
-			int iAttackerHitChance = (int)(pChar->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEHITCHANCE, true));
+			int iAttackerHitChance = static_cast<int>(pChar->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEHITCHANCE, true));
 			if ((g_Cfg.m_iRacialFlags & RACIALF_GARG_DEADLYAIM) && pChar->IsGargoyle())
 			{
 				// Racial traits: Deadly Aim. Gargoyles always have +5 Hit Chance Increase and a minimum of 20.0 Throwing skill (not shown in skills gump).
@@ -222,29 +222,30 @@ int CServerConfig::Calc_CombatChanceToHit(const CChar * pChar, const CChar * pCh
 					iAttackerSkill = 200;
 				iAttackerHitChance += 5;
 			}
-			iAttackerSkill = ((iAttackerSkill / 10) + 20) * (100 + std::min(iAttackerHitChance, 45));
 
-			const int iTargetIncreaseDefChance = (int)(pCharTarg->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEDEFCHANCE, true));
-			const int iTargetSkill = ((pCharTarg->Skill_GetBase(skillTarget) / 10) + 20) * (100 + std::min(iTargetIncreaseDefChance, 45));
+			// Skills are stored in tenths: 1000 means 100.0 skill.
+			const int iAttackerScore = (iAttackerSkill / 10) + 20;
+			const int iTargetScore = (pCharTarg->Skill_GetBase(skillTarget) / 10) + 20;
+			const int iBaseChance = std::clamp(iAttackerScore * 100 / (iTargetScore * 2), 0, 100);
 
-			int iChance = iAttackerSkill * 100 / (iTargetSkill * 2);
-            if (pChar->IsPlayer() && !pCharTarg->IsPlayer())
-            {
-                // Player vs NPC – smoother PvE
-                int iHCI  = (int)pChar->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEHITCHANCE, true);
-                iChance  += 12 + (iHCI / 4);
-            }
-            else if (!pChar->IsPlayer())
-            {
-                // NPC vs Player – give small buff so mobs don't feel toothless
-                int iHCI = (int)pChar->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEHITCHANCE, true);
-                iChance  += 10 + (iHCI / 4);
-            }
-			if (iChance < 35)
-				iChance = 35;	// minimum hit chance is 30%
-			else if (iChance > 95)
-				iChance = 95;
-			return iChance;
+			// PvP and controlled attackers use the softer curve to keep pets and summons
+			// useful without giving raid groups the full player-versus-monster accuracy.
+			const bool fSofterCurve =
+				(pChar->IsPlayer() && pCharTarg->IsPlayer()) ||
+				pChar->IsStatFlag(STATF_PET | STATF_CONJURED);
+			int iChance = (fSofterCurve ? 55 : 60) + (iBaseChance * 30 / 100);
+			iChance = std::clamp(iChance, 60, 90);
+
+			// HCI and DCI modify the established chance proportionally. Equal values cancel.
+			const int iHCI = std::clamp(iAttackerHitChance, 0, 45);
+			const int iDCI = std::clamp(
+				static_cast<int>(pCharTarg->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEDEFCHANCE, true)), 0, 45);
+			iChance = static_cast<int>(
+				(static_cast<int64>(iChance) * (100 + iHCI)) / (100 + iDCI));
+
+			// Skills alone never fall below 60%; defensive equipment can lower the final
+			// chance further, while every attacker retains at least a coin-flip chance.
+			return std::clamp(iChance, 50, 95);
 		}
 	}
 }
