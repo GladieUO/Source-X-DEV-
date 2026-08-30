@@ -301,30 +301,16 @@ void CChar::OnHarmedBy( CChar * pCharSrc )
 	}
     if (fFightActive && m_Fight_Targ_UID.CharFind())
     {
-        // Players don't auto-switch targets
         if (m_pPlayer)
             return;
 
-        // If already attacking this source, don't restart attack cycle
-        if (m_Fight_Targ_UID == pCharSrc->GetUID())
+        // Threat-enabled NPCs evaluate after this hit is recorded.
+        if (m_pNPC && (NPC_GetAiFlags() & NPC_AI_THREAT))
             return;
 
-        if (m_atFight.m_iWarSwingState == WAR_SWING_SWINGING)
+        // Preserve legacy reactive switching when threat AI is disabled.
+        if (g_Rand.Get16ValFast(10))
             return;
-
-        int64 now = CWorldGameTime::GetCurrentTime().GetTimeRaw();
-
-        // Prevent target switching spam (important for summon spam)
-        const int TARGET_SWITCH_COOLDOWN = 5000; // 5 seconds
-
-        if (now - m_timeLastTargetSwitch < TARGET_SWITCH_COOLDOWN)
-            return;
-
-        // Keep original randomness
-        if (g_Rand.GetVal(10))
-            return;
-
-        m_timeLastTargetSwitch = now;
     }
 
 	if (!IsSetCombatFlags(COMBAT_NOPETDESERT) && m_pNPC && NPC_IsOwnedBy(pCharSrc, false))
@@ -942,43 +928,36 @@ effect_bounce:
 		{
 			if ( refAttacker.charUID == uiSrcUID )
 			{
-                int threat = maximum(0, iDmg);
-                // 🔥 Apply modifiers
-                if (pSrc->IsStatFlag(STATF_PET))
-                {
-                    threat = (threat * 120) / 100;
-                }
-                else if (pSrc->IsPlayer())
-                {
-                    threat = (threat * 70) / 100;
-                }
 				refAttacker.elapsed = 0;
 				refAttacker.amountDone += maximum( 0, iDmg );
-                refAttacker.threat += threat;
+                refAttacker.threat += maximum(0, iDmg);
                 fAttackerExists = true;
 				break;
 			}
 		}
         if (fAttackerExists == false)
 		{
-            int threat = maximum(0, iDmg);
-            // 🔥 Apply modifiers
-            if (pSrc->IsStatFlag(STATF_PET))
-            {
-                threat = (threat * 120) / 100;
-            }
-            else if (pSrc->IsPlayer())
-            {
-                threat = (threat * 60) / 100;
-            }
 			LastAttackers attacker;
 			attacker.charUID = uiSrcUID;
 			attacker.elapsed = 0;
 			attacker.amountDone = maximum( 0, iDmg );
-            attacker.threat     = threat;
+			attacker.threat = maximum(0, iDmg);
 			attacker.ignore = false;
 			m_lastAttackers.emplace_back(std::move(attacker));
 		}
+
+        if (m_pNPC && !IsStatFlag(STATF_PET) && (NPC_GetAiFlags() & NPC_AI_THREAT))
+        {
+            const int64 now = CWorldGameTime::GetCurrentTime().GetTimeRaw();
+            constexpr int64 THREAT_EVALUATION_INTERVAL = 1000;
+            if ((now - m_timeLastThreatEvaluation) >= THREAT_EVALUATION_INTERVAL)
+            {
+                m_timeLastThreatEvaluation = now;
+                CChar *pBestTarget = NPC_FightFindBestTarget();
+                if (pBestTarget && (pBestTarget != m_Fight_Targ_UID.CharFind()))
+                    Fight_Attack(pBestTarget);
+            }
+        }
 
 		// A physical blow of some sort.
 		if (uiType & (DAMAGE_HIT_BLUNT|DAMAGE_HIT_PIERCE|DAMAGE_HIT_SLASH))
@@ -2510,4 +2489,3 @@ WAR_SWING_TYPE CChar::Fight_Hit( CChar * pCharTarg )
 
 	return WAR_SWING_EQUIPPING_NOWAIT;
 }
-
