@@ -5,6 +5,7 @@
 #include "../common/sphereversion.h"
 #include "../network/CClientIterator.h"
 #include "../network/CNetworkManager.h"
+#include "../network/send.h"
 #include "../sphere/ProfileTask.h"
 #include "chars/CChar.h"
 #include "clients/CClient.h"
@@ -942,6 +943,11 @@ bool CWorld::SaveForce() // Save world state
 {
 	ADDTOCALLSTACK("CWorld::SaveForce");
 	CWorldComm::Broadcast( g_Cfg.GetDefaultMsg( DEFMSG_SERVER_WORLDSAVE ) );
+	{
+		ClientIterator it;
+		for (CClient* pClient = it.next(); pClient != nullptr; pClient = it.next())
+			pClient->addProgressBar(PacketProgressBar::PauseAll, "");
+	}
 	if (g_NetworkManager.isOutputThreaded() == false)
 		g_NetworkManager.flushAllClients();
 
@@ -1002,6 +1008,11 @@ failedstage:
 	}
 
     g_Serv.SetServerMode(ServMode::Run);			// Game is up and running
+	{
+		ClientIterator it;
+		for (CClient* pClient = it.next(); pClient != nullptr; pClient = it.next())
+			pClient->addProgressBar(PacketProgressBar::ResumeAll, "");
+	}
 	return fSuccess;
 }
 

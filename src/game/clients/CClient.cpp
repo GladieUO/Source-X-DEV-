@@ -1507,6 +1507,39 @@ bool CClient::r_Verb( CScript & s, CTextConsole * pSrc ) // Execute command from
 			break;
 		}
 
+		case CV_PROGRESSBAR:
+		{
+			tchar *ppArgs[4];
+			const size_t iQty = Str_ParseCmds(s.GetArgRaw(), ppArgs, ARRAY_COUNT(ppArgs), ",");
+			if (iQty < 3 || !ppArgs[0] || !*ppArgs[0] || !IsStrNumeric(ppArgs[1]) || !IsStrNumeric(ppArgs[2]))
+			{
+				DEBUG_ERR(("Invalid PROGRESSBAR usage. Expected: name,seconds,direction[,description].\n"));
+				return true;
+			}
+
+			const int duration = Exp_GetVal(ppArgs[1]);
+			const int direction = Exp_GetVal(ppArgs[2]);
+			if (duration < 1 || duration > 65535 || direction < 1 || direction > 2)
+			{
+				DEBUG_ERR(("Invalid PROGRESSBAR duration or direction.\n"));
+				return true;
+			}
+
+			addProgressBar(PacketProgressBar::Start, ppArgs[0], static_cast<word>(duration), static_cast<byte>(direction), iQty > 3 ? ppArgs[3] : nullptr);
+			break;
+		}
+		case CV_PROGRESSBARPAUSE:
+			addProgressBar(PacketProgressBar::Pause, s.GetArgStr());
+			break;
+		case CV_PROGRESSBARRESUME:
+			addProgressBar(PacketProgressBar::Resume, s.GetArgStr());
+			break;
+		case CV_PROGRESSBARSTOP:
+			addProgressBar(PacketProgressBar::Stop, s.GetArgStr());
+			break;
+		case CV_PROGRESSBARFINISH:
+			addProgressBar(PacketProgressBar::Finish, s.GetArgStr());
+			break;
 		case CV_REPAIR:
 			addTarget( CLIMODE_TARG_REPAIR, g_Cfg.GetDefaultMsg( DEFMSG_SELECT_ITEM_REPAIR ) );
 			break;

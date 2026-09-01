@@ -2766,6 +2766,15 @@ void CClient::addKRToolbar( bool bEnable )
 	new PacketToggleHotbar(this, bEnable);
 }
 
+void CClient::addProgressBar(byte action, lpctstr name, word durationSeconds, byte direction, lpctstr description) const
+{
+	ADDTOCALLSTACK("CClient::addProgressBar");
+	if (GetConnectType() != CONNECT_GAME)
+		return;
+
+	new PacketProgressBar(this, static_cast<PacketProgressBar::Action>(action), name ? name : "", durationSeconds, direction, description);
+}
+
 
 // --------------------------------------------------------------------
 void CClient::SendPacket( tchar * ptcKey )
@@ -3280,5 +3289,3 @@ byte CClient::LogIn( lpctstr ptcAccName, lpctstr ptcPassword, CSString & sMsg )
 
 	return LogIn(pAccount, sMsg);
 }
-
-

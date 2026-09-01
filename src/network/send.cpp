@@ -3968,6 +3968,21 @@ PacketExtended::PacketExtended(EXTDATA_TYPE type, uint len, Priority priority) :
 	writeInt16((word)(type));
 }
 
+PacketProgressBar::PacketProgressBar(const CClient* target, Action action, lpctstr name, word durationSeconds, byte direction, lpctstr description) :
+	PacketSend(XCMD_ExtData, 0, g_Cfg.m_fUsePacketPriorities ? PRI_LOW : PRI_NORMAL)
+{
+	ADDTOCALLSTACK("PacketProgressBar::PacketProgressBar");
+	initLength();
+	writeInt16(0xFFFE);
+	writeStringFixedASCII("PBAR", 4);
+	writeByte(action);
+	writeByte(direction);
+	writeInt16(durationSeconds);
+	writeStringUTF16(name ? name : "");
+	writeStringUTF16(description ? description : "");
+	push(target);
+}
+
 
 /***************************************************************************
  *

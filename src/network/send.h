@@ -1367,6 +1367,23 @@ public:
 	PacketExtended(EXTDATA_TYPE type, uint len = 0, Priority priority = PRI_NORMAL);
 };
 
+class PacketProgressBar : public PacketSend
+{
+public:
+	enum Action : byte
+	{
+		Start,
+		Pause,
+		Resume,
+		Stop,
+		Finish,
+		PauseAll,
+		ResumeAll
+	};
+
+	PacketProgressBar(const CClient* target, Action action, lpctstr name, word durationSeconds = 0, byte direction = 1, lpctstr description = nullptr);
+};
+
 /***************************************************************************
  *
  *
