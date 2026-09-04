@@ -1573,11 +1573,6 @@ void CChar::Spell_Effect_Add( CItem * pSpell )
 			return;
 		case SPELL_Agility:
 			{
-				if ( pCaster != nullptr && IsSetMagicFlags(MAGICF_OSIFORMULAS) )
-				{
-                    wStatEffectRef = 1 + (pCaster->Skill_GetBase(SKILL_EVALINT) / 100);
-				}
-
 				Stat_AddMod( STAT_DEX, +wStatEffectRef );
 
 				if (pClient && IsSetOF(OF_Buffs))
@@ -1590,10 +1585,6 @@ void CChar::Spell_Effect_Add( CItem * pSpell )
 			return;
 		case SPELL_Cunning:
 			{
-				if ( pCaster != nullptr && IsSetMagicFlags(MAGICF_OSIFORMULAS) )
-				{
-                    wStatEffectRef = 1 + (pCaster->Skill_GetBase(SKILL_EVALINT) / 100);
-				}
 				Stat_AddMod( STAT_INT, +wStatEffectRef );
 				if (pClient && IsSetOF(OF_Buffs))
 				{
@@ -1605,10 +1596,6 @@ void CChar::Spell_Effect_Add( CItem * pSpell )
 			return;
 		case SPELL_Strength:
 			{
-				if ( pCaster != nullptr && IsSetMagicFlags(MAGICF_OSIFORMULAS) )
-				{
-                    wStatEffectRef = 1 + (pCaster->Skill_GetBase(SKILL_EVALINT) / 100);
-				}
 				Stat_AddMod( STAT_STR, +wStatEffectRef );
 				if (pClient && IsSetOF(OF_Buffs))
 				{
@@ -1620,10 +1607,6 @@ void CChar::Spell_Effect_Add( CItem * pSpell )
 			return;
 		case SPELL_Bless:
 			{
-				if ( pCaster != nullptr && IsSetMagicFlags(MAGICF_OSIFORMULAS) )
-				{
-                    wStatEffectRef = 1 + (pCaster->Skill_GetBase(SKILL_EVALINT) / 100);
-				}
 				for ( int i = STAT_STR; i < STAT_BASE_QTY; ++i )
 					Stat_AddMod((STAT_TYPE)(i), wStatEffectRef);
 
@@ -3714,6 +3697,7 @@ bool CChar::OnSpellEffect( SPELL_TYPE spell, CChar * pCharSrc, int iSkillLevel, 
     if (IsStatFlag(STATF_RIDDEN) && (pSpellDef->IsSpellType(SPELLFLAG_FIELD) || pSpellDef->IsSpellType(SPELLFLAG_AREA)))
         return false;
 
+	const int iSourceSkillLevel = iSkillLevel;
 	iSkillLevel = (iSkillLevel / 2) + g_Rand.GetVal(iSkillLevel / 2);	// randomize the potency
 	int iEffect = g_Cfg.GetSpellEffect(spell, iSkillLevel);
 
@@ -3723,6 +3707,8 @@ bool CChar::OnSpellEffect( SPELL_TYPE spell, CChar * pCharSrc, int iSkillLevel, 
 	SOUND_TYPE iSound = pSpellDef->m_sound;
 	bool fExplode = (pSpellDef->IsSpellType(SPELLFLAG_FX_BOLT) && !pSpellDef->IsSpellType(SPELLFLAG_GOOD));		// bolt (chasing) spells have explode = 1 by default (if not good spell)
 	bool fPotion = (pSourceItem && pSourceItem->IsType(IT_POTION));
+	const bool fStoredItemPower = pSourceItem &&
+		(pSourceItem->IsType(IT_POTION) || pSourceItem->IsType(IT_WAND) || pSourceItem->IsType(IT_SCROLL));
 	if ( fPotion )
 	{
 		static const SOUND_TYPE sm_DrinkSounds[] = { 0x030, 0x031 };
@@ -3981,6 +3967,16 @@ bool CChar::OnSpellEffect( SPELL_TYPE spell, CChar * pCharSrc, int iSkillLevel, 
 		case SPELL_Strength:
 		case SPELL_Bless:
 		case SPELL_Mass_Curse:
+			// Positive stat effects cast from items use the power stored on the
+			// potion, wand or scroll. Direct casts keep the OSI Eval Int formula.
+			if (IsSetMagicFlags(MAGICF_OSIFORMULAS) &&
+				(spell == SPELL_Agility || spell == SPELL_Cunning || spell == SPELL_Strength || spell == SPELL_Bless))
+			{
+				if (fStoredItemPower)
+					iEffect = g_Cfg.GetSpellEffect(spell, iSourceSkillLevel);
+				else if (pCharSrc)
+					iEffect = 1 + (pCharSrc->Skill_GetBase(SKILL_EVALINT) / 100);
+			}
 			Spell_Effect_Create( spell, fPotion ? LAYER_FLAG_Potion : LAYER_SPELL_STATS, iEffect, iDuration, pCharSrc );
 			break;
 
