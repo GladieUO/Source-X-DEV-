@@ -1381,7 +1381,7 @@ public:
 		ResumeAll
 	};
 
-	PacketProgressBar(const CClient* target, Action action, lpctstr name, word durationSeconds = 0, byte direction = 1, lpctstr description = nullptr);
+	PacketProgressBar(const CClient* target, Action action, lpctstr name, word durationSeconds = 0, byte direction = 1, lpctstr description = nullptr, byte style = 1, byte anchor = 1, word barHue = 0, byte timerMode = 0);
 };
 
 /***************************************************************************

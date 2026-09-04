@@ -2766,13 +2766,13 @@ void CClient::addKRToolbar( bool bEnable )
 	new PacketToggleHotbar(this, bEnable);
 }
 
-void CClient::addProgressBar(byte action, lpctstr name, word durationSeconds, byte direction, lpctstr description) const
+void CClient::addProgressBar(byte action, lpctstr name, word durationSeconds, byte direction, lpctstr description, byte style, byte anchor, word barHue, byte timerMode) const
 {
 	ADDTOCALLSTACK("CClient::addProgressBar");
 	if (GetConnectType() != CONNECT_GAME)
 		return;
 
-	new PacketProgressBar(this, static_cast<PacketProgressBar::Action>(action), name ? name : "", durationSeconds, direction, description);
+	new PacketProgressBar(this, static_cast<PacketProgressBar::Action>(action), name ? name : "", durationSeconds, direction, description, style, anchor, barHue, timerMode);
 }
 
 

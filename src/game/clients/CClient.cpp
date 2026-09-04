@@ -1509,23 +1509,27 @@ bool CClient::r_Verb( CScript & s, CTextConsole * pSrc ) // Execute command from
 
 		case CV_PROGRESSBAR:
 		{
-			tchar *ppArgs[4];
+			tchar *ppArgs[8];
 			const size_t iQty = Str_ParseCmds(s.GetArgRaw(), ppArgs, ARRAY_COUNT(ppArgs), ",");
 			if (iQty < 3 || !ppArgs[0] || !*ppArgs[0] || !IsStrNumeric(ppArgs[1]) || !IsStrNumeric(ppArgs[2]))
 			{
-				DEBUG_ERR(("Invalid PROGRESSBAR usage. Expected: name,seconds,direction[,description].\n"));
+				DEBUG_ERR(("Invalid PROGRESSBAR usage. Expected: name,seconds,direction[,description[,style[,anchor[,hue[,timerMode]]]]].\n"));
 				return true;
 			}
 
 			const int duration = Exp_GetVal(ppArgs[1]);
 			const int direction = Exp_GetVal(ppArgs[2]);
-			if (duration < 1 || duration > 65535 || direction < 1 || direction > 2)
+			const int style = iQty > 4 ? Exp_GetVal(ppArgs[4]) : 1;
+			const int anchor = iQty > 5 ? Exp_GetVal(ppArgs[5]) : 1;
+			const int barHue = iQty > 6 ? Exp_GetVal(ppArgs[6]) : 0;
+			const int timerMode = iQty > 7 ? Exp_GetVal(ppArgs[7]) : 0;
+			if (duration < 1 || duration > 65535 || direction < 1 || direction > 2 || style < 1 || style > 2 || anchor < 1 || anchor > 2 || barHue < 0 || barHue > 65535 || timerMode < 0 || timerMode > 2)
 			{
-				DEBUG_ERR(("Invalid PROGRESSBAR duration or direction.\n"));
+				DEBUG_ERR(("Invalid PROGRESSBAR duration, direction, style, anchor, hue, or timer mode.\n"));
 				return true;
 			}
 
-			addProgressBar(PacketProgressBar::Start, ppArgs[0], static_cast<word>(duration), static_cast<byte>(direction), iQty > 3 ? ppArgs[3] : nullptr);
+			addProgressBar(PacketProgressBar::Start, ppArgs[0], static_cast<word>(duration), static_cast<byte>(direction), iQty > 3 ? ppArgs[3] : nullptr, static_cast<byte>(style), static_cast<byte>(anchor), static_cast<word>(barHue), static_cast<byte>(timerMode));
 			break;
 		}
 		case CV_PROGRESSBARPAUSE:

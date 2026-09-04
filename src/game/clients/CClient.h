@@ -779,7 +779,7 @@ public:
 	void addVisualRange( byte visualRange );
 	void addIdleWarning( byte message );
 	void addKRToolbar( bool bEnable );
-	void addProgressBar(byte action, lpctstr name, word durationSeconds = 0, byte direction = 1, lpctstr description = nullptr) const;
+	void addProgressBar(byte action, lpctstr name, word durationSeconds = 0, byte direction = 1, lpctstr description = nullptr, byte style = 1, byte anchor = 1, word barHue = 0, byte timerMode = 0) const;
 
 	void SendPacket( tchar * pszPacket );
 	void LogOpenedContainer(const CItemContainer* pContainer);
