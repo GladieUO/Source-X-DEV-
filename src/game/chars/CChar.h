@@ -1103,6 +1103,7 @@ private:
 
 	int	Fight_CalcRange( CItem * pWeapon = nullptr ) const;
     void Fight_SetDefaultSwingDelays();
+	bool Fight_ApplyHitManaLeech(int iDmg);
 
 	bool Fight_IsActive() const;
 public:

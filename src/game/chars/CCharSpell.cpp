@@ -3954,6 +3954,16 @@ bool CChar::OnSpellEffect( SPELL_TYPE spell, CChar * pCharSrc, int iSkillLevel, 
 			iDmgPhysical = 100;
 
 		OnTakeDamage(iEffect, pCharSrc, iDmgType, iDmgPhysical, iDmgFire, iDmgCold, iDmgPoison, iDmgEnergy,spell);
+
+		// Apply Hit Mana Leech to damaging spell casts as well. Weapon hit-spell
+		// procs already receive their leech roll in Fight_Hit and must not roll twice.
+		CItem* pWeapon = pCharSrc ? pCharSrc->m_uidWeapon.ItemFind() : nullptr;
+		const bool fWeaponHitSpell = pSourceItem && (pSourceItem == pWeapon) && !pSourceItem->IsType(IT_WAND);
+		if (pCharSrc && (pCharSrc != this) && !fReflecting && !fWeaponHitSpell &&
+			pCharSrc->Fight_ApplyHitManaLeech(iEffect))
+		{
+			pCharSrc->Sound(0x44d);
+		}
 	}
 
 	switch ( spell )

@@ -1785,6 +1785,29 @@ WAR_SWING_TYPE CChar::Fight_CanHit(CChar * pCharSrc, bool fSwingNoRange)
 	return WAR_SWING_READY;
 }
 
+bool CChar::Fight_ApplyHitManaLeech(int iDmg)
+{
+	ADDTOCALLSTACK("CChar::Fight_ApplyHitManaLeech");
+	if (iDmg <= 0)
+		return false;
+
+	const CCPropsChar* pCCPChar = GetComponentProps<CCPropsChar>();
+	const CCPropsChar* pBaseCCPChar = Base_GetDef()->GetComponentProps<CCPropsChar>();
+	const ushort uiHitManaLeech = (ushort)GetPropNum(pCCPChar, PROPCH_HITLEECHMANA, pBaseCCPChar);
+	if (!uiHitManaLeech || (g_Rand.GetLLVal(100) >= uiHitManaLeech))
+		return false;
+
+	const int iPercent = 10 + (uiHitManaLeech / 15);
+	int iLeech = (iDmg * iPercent) / 100;
+
+	if (IsNPC())
+		iLeech += uiHitManaLeech / 10;
+
+	iLeech = minimum(maximum(iLeech, 2), 40);
+	UpdateStatVal(STAT_INT, (ushort)iLeech);
+	return true;
+}
+
 // Attempt to hit our target.
 // Calculating damage
 // Damaging target ( OnTakeDamage() / @GetHit )
@@ -2347,24 +2370,8 @@ WAR_SWING_TYPE CChar::Fight_Hit( CChar * pCharTarg )
         // --------------------
         // MANA LEECH
         // --------------------
-        ushort uiHitManaLeech = (ushort)GetPropNum(pCCPChar, PROPCH_HITLEECHMANA, pBaseCCPChar);
-        if (uiHitManaLeech && (g_Rand.GetLLVal(100) < uiHitManaLeech))
-        {
-            int percent = 10 + (uiHitManaLeech / 15);
-            int leech   = (iDmg * percent) / 100;
-
-            if (IsNPC())
-                leech += uiHitManaLeech / 10;
-
-            if (leech < 2)
-                leech = 2;
-
-            if (leech > 40)
-                leech = 40;
-
-            UpdateStatVal(STAT_INT, (ushort)leech);
-            fMakeLeechSound = true;
-        }
+		if (Fight_ApplyHitManaLeech(iDmg))
+			fMakeLeechSound = true;
 
         // --------------------
         // STAMINA LEECH
