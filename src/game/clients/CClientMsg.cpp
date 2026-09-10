@@ -1193,6 +1193,12 @@ void CClient::addChar( CChar * pChar, bool fFull )
 	EXC_SET_BLOCK("Health bar color");
 	addHealthBarUpdate( pChar );
 
+	if (fFull && pChar->IsNPC())
+	{
+		EXC_SET_BLOCK("NPC buffs");
+		pChar->ResendNpcBuffs(this);
+	}
+
     if (fFull && !fStatue)
     {
         if ( pChar->m_pNPC && pChar->m_pNPC->m_bonded && pChar->IsStatFlag(STATF_DEAD) )

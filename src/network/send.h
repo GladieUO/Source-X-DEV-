@@ -27,6 +27,7 @@ class CCharRefArray;
 class CItemMultiCustom;
 class CItemShip;
 class CClientTooltip;
+class CChar;
 
 
 // TODO: define the virtual destructor of each class with virtual methods in the .cpp file.
@@ -1886,6 +1887,8 @@ class PacketBuff : public PacketSend
 public:
 	PacketBuff(const CClient* target, const BUFF_ICONS iconId, const dword clilocOne, const dword clilocTwo, const word durationSeconds, lpctstr* args, uint argCount); // add buff
 	PacketBuff(const CClient* target, const BUFF_ICONS iconId); // remove buff
+	PacketBuff(const CClient* target, const CChar* character, const BUFF_ICONS iconId, const dword clilocOne, const dword clilocTwo, const word durationSeconds, lpctstr* args, uint argCount); // add buff for an explicit character
+	PacketBuff(const CClient* target, const CChar* character, const BUFF_ICONS iconId); // remove buff for an explicit character
 
     virtual bool canSendTo(const CNetState* state) const override { return CanSendTo(state); }
     static bool CanSendTo(const CNetState* state);

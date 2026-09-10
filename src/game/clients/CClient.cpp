@@ -16,6 +16,7 @@
 #include "../CWorld.h"
 #include "../CWorldGameTime.h"
 #include "../CWorldMap.h"
+#include "../CWorldSearch.h"
 #include "../spheresvr.h"
 #include "../triggers.h"
 #include "CParty.h"
@@ -1552,6 +1553,20 @@ bool CClient::r_Verb( CScript & s, CTextConsole * pSrc ) // Execute command from
 			break;
 		case CV_RESEND:
 			addReSync();
+			break;
+		case CV_RESENDNPCBUFFS:
+			{
+				if (!m_pChar)
+					return false;
+
+				auto areaChars = CWorldSearchHolder::GetInstance(m_pChar->GetTopPoint(), m_pChar->GetVisualRange());
+				areaChars->SetSearchSquare(true);
+				for (CChar* pChar = areaChars->GetChar(); pChar != nullptr; pChar = areaChars->GetChar())
+				{
+					if (pChar->IsNPC())
+						pChar->ResendNpcBuffs(this);
+				}
+			}
 			break;
 		case CV_SAVE:
 			g_World.Save(s.GetArgVal() != 0);

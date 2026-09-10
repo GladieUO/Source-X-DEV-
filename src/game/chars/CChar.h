@@ -104,6 +104,16 @@ private:
 
 	CClient * m_pClient;	// is the char a currently logged in m_pPlayer ?
 
+	struct NpcBuffData
+	{
+		BUFF_ICONS m_iconId;
+		dword m_clilocOne;
+		dword m_clilocTwo;
+		int64 m_expiresAtMs;
+		std::vector<CSString> m_args;
+	};
+	std::vector<NpcBuffData> m_npcBuffs;
+
 public:
 	struct LastAttackers
 	{
@@ -533,6 +543,11 @@ public:
 
 	void ClientAttach( CClient * pClient );
 	void ClientDetach();
+	void SetBuffIcon(BUFF_ICONS iconId, dword clilocOne, dword clilocTwo, word durationSeconds = 0, lpctstr* args = nullptr, uint argCount = 0);
+	void RemoveBuffIcon(BUFF_ICONS iconId);
+	void AddNpcBuff(BUFF_ICONS iconId, dword clilocOne, dword clilocTwo, word durationSeconds, lpctstr* args, uint argCount);
+	void RemoveNpcBuff(BUFF_ICONS iconId);
+	void ResendNpcBuffs(const CClient* client);
 
 	bool SetPrivLevel( CTextConsole * pSrc, lpctstr pszFlags );
 	bool CanDisturb( const CChar * pChar ) const;

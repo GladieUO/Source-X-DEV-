@@ -8,6 +8,8 @@
 #include "../../common/CUID.h"
 #include "../../common/CRect.h"
 #include "../../common/CLog.h"
+#include "../../network/CClientIterator.h"
+#include "../../network/send.h"
 #include "../clients/CAccount.h"
 #include "../clients/CClient.h"
 #include "../items/CItem.h"
@@ -31,6 +33,117 @@
 #include "CCharNPC.h"
 #include "CChar.h"
 #include <algorithm>
+
+
+static bool CanReceiveNpcBuff(const CClient* pClient, const CChar* pChar)
+{
+	return pClient && pChar && IsSetOF(OF_Buffs) && pClient->CanSee(pChar) &&
+		(pClient->m_TagDefs.GetKeyNum("CUO_NPCBUFFS") != 0) && PacketBuff::CanSendTo(pClient->GetNetState());
+}
+
+void CChar::SetBuffIcon(BUFF_ICONS iconId, dword clilocOne, dword clilocTwo, word durationSeconds, lpctstr* args, uint argCount)
+{
+	ADDTOCALLSTACK("CChar::SetBuffIcon");
+	if (!IsSetOF(OF_Buffs))
+		return;
+
+	if (CClient* pClient = GetClientActive())
+	{
+		// Preserve the established player refresh sequence.
+		pClient->removeBuff(iconId);
+		pClient->addBuff(iconId, clilocOne, clilocTwo, durationSeconds, args, argCount);
+	}
+	else if (IsNPC())
+	{
+		// This replaces the stored entry and CUO replaces the same icon ID,
+		// so an NPC refresh needs no preceding remove packet.
+		AddNpcBuff(iconId, clilocOne, clilocTwo, durationSeconds, args, argCount);
+	}
+}
+
+void CChar::RemoveBuffIcon(BUFF_ICONS iconId)
+{
+	ADDTOCALLSTACK("CChar::RemoveBuffIcon");
+	if (CClient* pClient = GetClientActive())
+		pClient->removeBuff(iconId);
+	else if (IsNPC())
+		RemoveNpcBuff(iconId);
+}
+
+void CChar::AddNpcBuff(BUFF_ICONS iconId, dword clilocOne, dword clilocTwo, word durationSeconds, lpctstr* args, uint argCount)
+{
+	ADDTOCALLSTACK("CChar::AddNpcBuff");
+	m_npcBuffs.erase(
+		std::remove_if(m_npcBuffs.begin(), m_npcBuffs.end(),
+			[iconId](const NpcBuffData& buff) { return buff.m_iconId == iconId; }),
+		m_npcBuffs.end());
+
+	NpcBuffData buff;
+	buff.m_iconId = iconId;
+	buff.m_clilocOne = clilocOne;
+	buff.m_clilocTwo = clilocTwo;
+	buff.m_expiresAtMs = durationSeconds > 0
+		? CWorldGameTime::GetCurrentTime().GetTimeRaw() + (static_cast<int64>(durationSeconds) * MSECS_PER_SEC)
+		: 0;
+	buff.m_args.reserve(argCount);
+	for (uint i = 0; i < argCount; ++i)
+		buff.m_args.emplace_back(args[i]);
+	m_npcBuffs.emplace_back(std::move(buff));
+
+	ClientIterator it;
+	for (CClient* pClient = it.next(); pClient != nullptr; pClient = it.next())
+	{
+		if (CanReceiveNpcBuff(pClient, this))
+			new PacketBuff(pClient, this, iconId, clilocOne, clilocTwo, durationSeconds, args, argCount);
+	}
+}
+
+void CChar::RemoveNpcBuff(BUFF_ICONS iconId)
+{
+	ADDTOCALLSTACK("CChar::RemoveNpcBuff");
+	const auto firstRemoved = std::remove_if(m_npcBuffs.begin(), m_npcBuffs.end(),
+		[iconId](const NpcBuffData& buff) { return buff.m_iconId == iconId; });
+	if (firstRemoved == m_npcBuffs.end())
+		return;
+	m_npcBuffs.erase(firstRemoved, m_npcBuffs.end());
+
+	ClientIterator it;
+	for (CClient* pClient = it.next(); pClient != nullptr; pClient = it.next())
+	{
+		if (CanReceiveNpcBuff(pClient, this))
+			new PacketBuff(pClient, this, iconId);
+	}
+}
+
+void CChar::ResendNpcBuffs(const CClient* client)
+{
+	ADDTOCALLSTACK("CChar::ResendNpcBuffs");
+	if (!CanReceiveNpcBuff(client, this))
+		return;
+
+	const int64 now = CWorldGameTime::GetCurrentTime().GetTimeRaw();
+	m_npcBuffs.erase(
+		std::remove_if(m_npcBuffs.begin(), m_npcBuffs.end(),
+			[now](const NpcBuffData& buff) { return buff.m_expiresAtMs > 0 && buff.m_expiresAtMs <= now; }),
+		m_npcBuffs.end());
+
+	for (NpcBuffData& buff : m_npcBuffs)
+	{
+		word durationSeconds = 0;
+		if (buff.m_expiresAtMs > 0)
+		{
+			const int64 remainingSeconds = (buff.m_expiresAtMs - now + MSECS_PER_SEC - 1) / MSECS_PER_SEC;
+			durationSeconds = static_cast<word>(std::min<int64>(remainingSeconds, UINT16_MAX));
+		}
+
+		lpctstr args[7] = {};
+		const uint argCount = static_cast<uint>(std::min<size_t>(buff.m_args.size(), ARRAY_COUNT(args)));
+		for (uint i = 0; i < argCount; ++i)
+			args[i] = buff.m_args[i].GetBuffer();
+
+		new PacketBuff(client, this, buff.m_iconId, buff.m_clilocOne, buff.m_clilocTwo, durationSeconds, args, argCount);
+	}
+}
 
 
 lpctstr const CChar::sm_szTrigName[CTRIG_QTY+1] =	// static
@@ -4416,6 +4529,44 @@ bool CChar::r_Verb( CScript &s, CTextConsole * pSrc ) // Execute command from sc
 
 	switch ( index )
 	{
+		case CHV_ADDBUFF:
+			{
+				if (!IsNPC())
+					return false;
+
+				tchar* ppArgs[11] = {};
+				const int argQty = Str_ParseCmds(s.GetArgStr(), ppArgs, ARRAY_COUNT(ppArgs));
+				if (argQty < 4)
+				{
+					DEBUG_ERR(("ADDBUFF requires icon, title cliloc, description cliloc and duration\n"));
+					return true;
+				}
+
+				int iArgs[4];
+				for (int i = 0; i < 4; ++i)
+				{
+					if (!IsStrNumeric(ppArgs[i]))
+					{
+						DEBUG_ERR(("Invalid AddBuff argument number %u\n", i + 1));
+						return true;
+					}
+					iArgs[i] = Exp_GetVal(ppArgs[i]);
+				}
+
+				if (iArgs[0] < BI_START || iArgs[0] > BI_QTY)
+				{
+					DEBUG_ERR(("Invalid AddBuff icon ID\n"));
+					return true;
+				}
+
+				lpctstr args[7] = {};
+				const uint argsCount = static_cast<uint>(std::min(argQty - 4, 7));
+				for (uint i = 0; i < argsCount; ++i)
+					args[i] = ppArgs[i + 4];
+
+				AddNpcBuff(static_cast<BUFF_ICONS>(iArgs[0]), static_cast<dword>(iArgs[1]), static_cast<dword>(iArgs[2]), static_cast<word>(iArgs[3]), args, argsCount);
+			}
+			break;
 		case CHV_AFK:
 			// toggle ?
 			{
@@ -4865,6 +5016,21 @@ bool CChar::r_Verb( CScript &s, CTextConsole * pSrc ) // Execute command from sc
 					GetClientActive()->addObjectRemove(this);
 			}
 			Delete((index == CHV_DESTROY));
+			break;
+		case CHV_REMOVEBUFF:
+			{
+				if (!IsNPC())
+					return false;
+
+				const BUFF_ICONS iconId = static_cast<BUFF_ICONS>(s.GetArgVal());
+				if (iconId < BI_START || iconId > BI_QTY)
+				{
+					DEBUG_ERR(("Invalid RemoveBuff icon ID\n"));
+					return true;
+				}
+
+				RemoveNpcBuff(iconId);
+			}
 			break;
 		case CHV_RESURRECT:
 			{

@@ -5060,12 +5060,16 @@ bool PacketPropertyListVersion::CanSendTo(const CNetState* state) // static
  *
  *
  ***************************************************************************/
-PacketBuff::PacketBuff(const CClient* target, const BUFF_ICONS iconId, const dword clilocOne, const dword clilocTwo, const word durationSeconds, lpctstr* args, uint argCount) : PacketSend(XCMD_BuffPacket, 72, g_Cfg.m_fUsePacketPriorities? PRI_LOW : PRI_NORMAL)
+PacketBuff::PacketBuff(const CClient* target, const BUFF_ICONS iconId, const dword clilocOne, const dword clilocTwo, const word durationSeconds, lpctstr* args, uint argCount) :
+	PacketBuff(target, target->GetChar(), iconId, clilocOne, clilocTwo, durationSeconds, args, argCount)
+{
+}
+
+PacketBuff::PacketBuff(const CClient* target, const CChar* character, const BUFF_ICONS iconId, const dword clilocOne, const dword clilocTwo, const word durationSeconds, lpctstr* args, uint argCount) : PacketSend(XCMD_BuffPacket, 72, g_Cfg.m_fUsePacketPriorities? PRI_LOW : PRI_NORMAL)
 {
 	ADDTOCALLSTACK("PacketBuff::PacketBuff");
 	// At date of 04/2015 RUOSI seems to have a different structure than the one we have with one more argument and different order... however this one seems to keep working: http://ruosi.org/packetguide/index.xml#serverDF
 
-	const CChar* character = target->GetChar();
 	ASSERT(character != nullptr);
 
 	initLength();
@@ -5121,11 +5125,15 @@ PacketBuff::PacketBuff(const CClient* target, const BUFF_ICONS iconId, const dwo
 	push(target);
 }
 
-PacketBuff::PacketBuff(const CClient* target, const BUFF_ICONS iconId) : PacketSend(XCMD_BuffPacket, 15, g_Cfg.m_fUsePacketPriorities? PRI_LOW : PRI_NORMAL)
+PacketBuff::PacketBuff(const CClient* target, const BUFF_ICONS iconId) :
+	PacketBuff(target, target->GetChar(), iconId)
+{
+}
+
+PacketBuff::PacketBuff(const CClient* target, const CChar* character, const BUFF_ICONS iconId) : PacketSend(XCMD_BuffPacket, 15, g_Cfg.m_fUsePacketPriorities? PRI_LOW : PRI_NORMAL)
 {
 	ADDTOCALLSTACK("PacketBuff::PacketBuff(2)");
 
-	const CChar* character = target->GetChar();
 	ASSERT(character != nullptr);
 
 	initLength();

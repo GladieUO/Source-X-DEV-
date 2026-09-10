@@ -3545,13 +3545,10 @@ bool CChar::Reveal( uint64 iFlags )
 	}
 
 	StatFlag_Clear(iFlags);
-	if ( pClient )
-	{
-		if ( !IsStatFlag(STATF_HIDDEN|STATF_INSUBSTANTIAL) )
-			pClient->removeBuff(BI_HIDDEN);
-		if ( !IsStatFlag(STATF_INVISIBLE) )
-			pClient->removeBuff(BI_INVISIBILITY);
-	}
+	if ( !IsStatFlag(STATF_HIDDEN|STATF_INSUBSTANTIAL) )
+		RemoveBuffIcon(BI_HIDDEN);
+	if ( !IsStatFlag(STATF_INVISIBLE) )
+		RemoveBuffIcon(BI_INVISIBILITY);
 
 	if ( IsStatFlag(STATF_INVISIBLE|STATF_HIDDEN|STATF_INSUBSTANTIAL|STATF_SLEEPING) )
 		return false;
@@ -4280,12 +4277,7 @@ bool CChar::SetPoison( int iSkill, int iHits, CChar * pCharSrc )
 		}
 	}
 
-	CClient *pClient = GetClientActive();
-	if ( pClient && IsSetOF(OF_Buffs) )
-	{
-		pClient->removeBuff(BI_POISON);
-		pClient->addBuff(BI_POISON, 1017383, 1070722, (word)(pPoison->m_itSpell.m_spellcharges));
-	}
+	SetBuffIcon(BI_POISON, 1017383, 1070722, (word)(pPoison->m_itSpell.m_spellcharges));
 
 	SysMessageDefault(DEFMSG_JUST_BEEN_POISONED);
 	StatFlag_Set(STATF_POISONED);
