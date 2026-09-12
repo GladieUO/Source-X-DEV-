@@ -3968,7 +3968,7 @@ PacketExtended::PacketExtended(EXTDATA_TYPE type, uint len, Priority priority) :
 	writeInt16((word)(type));
 }
 
-PacketProgressBar::PacketProgressBar(const CClient* target, Action action, lpctstr name, word durationSeconds, byte direction, lpctstr description, byte style, byte anchor, word barHue, byte timerMode) :
+PacketProgressBar::PacketProgressBar(const CClient* target, Action action, lpctstr name, word durationSeconds, byte direction, lpctstr description, byte style, byte anchor, word barHue, byte timerMode, dword durationMilliseconds) :
 	PacketSend(XCMD_ExtData, 0, g_Cfg.m_fUsePacketPriorities ? PRI_LOW : PRI_NORMAL)
 {
 	ADDTOCALLSTACK("PacketProgressBar::PacketProgressBar");
@@ -3984,6 +3984,7 @@ PacketProgressBar::PacketProgressBar(const CClient* target, Action action, lpcts
 	writeByte(anchor);
 	writeInt16(barHue);
 	writeByte(timerMode);
+	writeInt32(durationMilliseconds);
 	push(target);
 }
 
