@@ -184,6 +184,7 @@ bool CCPropsChar::SetPropertyNum(PropertyIndex_t iPropIndex, PropertyValNum_t iV
         case PROPCH_COMBATBONUSSTAT:
         case PROPCH_COMBATBONUSPERCENT:
         case PROPCH_FASTERCASTRECOVERY:
+        case PROPCH_INCREASEGOLD:
         case PROPCH_FASTERCASTING:
         case PROPCH_INCREASESWINGSPEED:
         case PROPCH_INCREASEDAM:

@@ -345,7 +345,8 @@ void PacketObjectStatus::WriteVersionSpecific(const CClient* target, CChar* othe
         writeInt16((word)other->GetPropNum(pCCPChar,     PROPCH_INCREASEDAM, pBaseCCPChar));
         writeInt16((word)other->GetPropNum(pCCPChar,     PROPCH_LOWERREAGENTCOST, pBaseCCPChar));
         writeInt16((word)other->GetPropNum(pCCPChar,     PROPCH_INCREASESPELLDAM, pBaseCCPChar));
-        writeInt16((word)other->GetPropNum(pCCPChar,     PROPCH_FASTERCASTRECOVERY, pBaseCCPChar));
+        // The status-gump slot is repurposed by our ClassicUO client for Increase Gold.
+        writeInt16((word)other->GetPropNum(pCCPChar,     PROPCH_INCREASEGOLD, pBaseCCPChar));
         writeInt16((word)other->GetPropNum(pCCPChar,     PROPCH_FASTERCASTING, pBaseCCPChar));
         writeInt16((word)other->GetPropNum(pCCPChar,     PROPCH_LOWERMANACOST, pBaseCCPChar));
 	}
