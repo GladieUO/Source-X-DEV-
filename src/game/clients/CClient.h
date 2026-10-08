@@ -319,6 +319,8 @@ private:
 	// Commands from client
 	void Event_Skill_Use( SKILL_TYPE x ); // Skill is clicked on the skill list
 	void Event_Talk_Common(lpctstr pszText ); // PC speech
+	void Event_TalkGuildOrFaction(lpctstr pszText, HUE_TYPE wHue, TALKMODE_TYPE mode, FONT_TYPE font, CLanguageID lang);
+	void Event_TalkTLKChat(lpctstr pszText, HUE_TYPE wHue, TALKMODE_TYPE mode, FONT_TYPE font, CLanguageID lang);
 	bool Event_Command( lpctstr pszCommand, TALKMODE_TYPE mode = TALKMODE_SAY ); // Client entered a '/' command like /ADD
 
 public:

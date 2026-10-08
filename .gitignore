@@ -30,6 +30,8 @@
 /save
 /web
 /scripts
+/src/.chat_build
+/src/.chat_build_tmp
 
 
 # Ignore files

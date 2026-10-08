@@ -10,6 +10,7 @@
 #include "../items/CItemContainer.h"
 #include "../items/CItemMessage.h"
 #include "../items/CItemMulti.h"
+#include "../items/CItemStone.h"
 #include "../items/CItemVendable.h"
 #include "../uo_files/uofiles_enums_creid.h"
 #include "../CSector.h"
@@ -19,6 +20,7 @@
 #include "../CWorldMap.h"
 #include "../CWorldSearch.h"
 #include "../triggers.h"
+#include "CChatChannel.h"
 #include "CClient.h"
 
 
@@ -1058,7 +1060,8 @@ void CClient::Event_CombatMode( bool fWar ) // Only for switching to combat mode
 bool CClient::Event_Command(lpctstr pszCommand, TALKMODE_TYPE mode)
 {
 	ADDTOCALLSTACK("CClient::Event_Command");
-	if ( mode == TALKMODE_GUILD || mode == TALKMODE_ALLIANCE ) // guild and alliance don't pass this.
+	if (mode == TALKMODE_GUILD || mode == TALKMODE_ALLIANCE || mode == TALKMODE_TLK_GLOBAL ||
+		mode == TALKMODE_TLK_PRIVATE || mode == TALKMODE_TLK_PRIVATE_LOOKUP)
 		return false;
 	if ( pszCommand[0] == 0 )
 		return true;		// should not be said
@@ -2037,6 +2040,186 @@ void CClient::Event_Talk_Common(lpctstr pszText)	// PC speech
 	pChar->NPC_OnHear(&pszText[i], m_pChar);
 }
 
+// Guild and TLK faction chat use the normal speech packet, but are delivered
+// directly to members rather than to characters near the speaker.
+void CClient::Event_TalkGuildOrFaction(lpctstr pszText, HUE_TYPE wHue, TALKMODE_TYPE mode, FONT_TYPE font, CLanguageID lang)
+{
+	ADDTOCALLSTACK("CClient::Event_TalkGuildOrFaction");
+	ASSERT(m_pChar);
+	ASSERT(mode == TALKMODE_GUILD || mode == TALKMODE_ALLIANCE);
+	const bool isGuildChat = (mode == TALKMODE_GUILD);
+	lpctstr blockTag = isGuildChat ? "blockchat_guild" : "blockchat_frakce";
+	if (m_pChar->GetKeyNum(blockTag))
+	{
+		SysMessage(isGuildChat ? "Guild chat is disabled." : "Faction chat is disabled.");
+		return;
+	}
+
+	CStoneMember* pSenderMember = m_pChar->Guild_FindMember(MEMORY_GUILD);
+	if (!pSenderMember || !pSenderMember->IsPrivMember())
+	{
+		SysMessage("You must be a guild member to use this chat.");
+		return;
+	}
+
+	const CItemStone* pSenderGuild = pSenderMember->GetParentStone();
+	const int faction = static_cast<int>(pSenderGuild->GetAlignType());
+	if (mode == TALKMODE_ALLIANCE && (faction < 1 || faction > 3))
+	{
+		SysMessage("Your guild is not in a faction.");
+		return;
+	}
+
+	nachar wszText[MAX_TALK_BUFFER];
+	CvtSystemToNETUTF16(wszText, ARRAY_COUNT(wszText), pszText, -1);
+
+	ClientIterator it;
+	for (CClient* pRecipient = it.next(); pRecipient != nullptr; pRecipient = it.next())
+	{
+		CChar* pRecipientChar = pRecipient->GetChar();
+		if (!pRecipientChar || pRecipientChar->GetKeyNum(blockTag))
+			continue;
+
+		CStoneMember* pRecipientMember = pRecipientChar->Guild_FindMember(MEMORY_GUILD);
+		if (!pRecipientMember || !pRecipientMember->IsPrivMember())
+			continue;
+
+		const CItemStone* pRecipientGuild = pRecipientMember->GetParentStone();
+		if (mode == TALKMODE_GUILD ? pRecipientGuild != pSenderGuild :
+			static_cast<int>(pRecipientGuild->GetAlignType()) != faction)
+			continue;
+
+		pRecipient->addBarkUNICODE(wszText, m_pChar, wHue, mode, font, lang);
+	}
+}
+
+// TLK channels are carried by speech packets, with their own journal message types.
+void CClient::Event_TalkTLKChat(lpctstr pszText, HUE_TYPE wHue, TALKMODE_TYPE mode, FONT_TYPE font, CLanguageID lang)
+{
+	ADDTOCALLSTACK("CClient::Event_TalkTLKChat");
+	ASSERT(m_pChar);
+	if (m_pChar->IsStatFlag(STATF_INCOGNITO))
+	{
+		SysMessage("Chat is unavailable while incognito.");
+		return;
+	}
+	if (mode == TALKMODE_TLK_GLOBAL)
+	{
+		bool globalChatOff;
+		{
+			auto pGlobals = g_ExprGlobals.mtEngineLockedReader();
+			globalChatOff = pGlobals->m_VarDefs.GetKeyNum("global_chat_off") != 0;
+		}
+		if (globalChatOff)
+		{
+			SysMessage("Global chat is currently unavailable.");
+			return;
+		}
+		if (m_pChar->GetKeyNum("blockchat"))
+		{
+			SysMessage("Global chat is disabled.");
+			return;
+		}
+		CChatChannel* pChannel = GetChannel();
+		if (!pChannel)
+		{
+			SysMessage("Join a chat channel before sending a message.");
+			return;
+		}
+		lpctstr chatName = GetAccount()->m_sChatName.GetBuffer();
+		if (!pChannel->HasVoice(chatName))
+		{
+			SysMessage("You cannot speak in this chat channel.");
+			return;
+		}
+		CSString channelMessage;
+		channelMessage.Format("%s\t%s", pChannel->GetName(), pszText);
+		nachar wszText[MAX_TALK_BUFFER];
+		CvtSystemToNETUTF16(wszText, ARRAY_COUNT(wszText), channelMessage.GetBuffer(), -1);
+		for (size_t i = 0; i < pChannel->m_Members.size(); ++i)
+		{
+			CChatChanMember* pMember = pChannel->m_Members[i].get();
+			CClient* pRecipient = pMember->GetClientActive();
+			if (!pRecipient || pMember->IsIgnoring(chatName))
+				continue;
+			CChar* pRecipientChar = pRecipient->GetChar();
+			if (pRecipientChar && !pRecipientChar->GetKeyNum("blockchat"))
+				pRecipient->addBarkUNICODE(wszText, m_pChar, wHue, mode, font, lang);
+		}
+		return;
+	}
+
+	if (m_pChar->GetKeyNum("blockchat_pm"))
+	{
+		SysMessage("Private chat is disabled.");
+		return;
+	}
+
+	// Lookup validates the name before CUO changes to PM mode. Sending uses the
+	// same lookup again so a disconnected or renamed recipient cannot be reused.
+	tchar targetName[MAX_TALK_BUFFER];
+	lpctstr message = strchr(pszText, '|');
+	if (mode == TALKMODE_TLK_PRIVATE)
+	{
+		if (!message || message == pszText || !message[1])
+		{
+			SysMessage("Choose a recipient and enter a message.");
+			return;
+		}
+		const size_t nameLength = static_cast<size_t>(message - pszText);
+		if (nameLength >= sizeof(targetName))
+			return;
+		memcpy(targetName, pszText, nameLength);
+		targetName[nameLength] = '\0';
+		++message;
+	}
+	else
+	{
+		Str_CopyLimitNull(targetName, pszText, sizeof(targetName));
+	}
+
+	CClient* pTarget = nullptr;
+	ClientIterator it;
+	for (CClient* pClient = it.next(); pClient != nullptr; pClient = it.next())
+	{
+		CChar* pChar = pClient->GetChar();
+		if (pChar && !strcmpi(pChar->GetName(), targetName))
+		{
+			if (pTarget)
+			{
+				SysMessage("More than one online character has that name.");
+				return;
+			}
+			pTarget = pClient;
+		}
+	}
+	if (!pTarget)
+	{
+		SysMessage("That character is not online.");
+		return;
+	}
+	CChar* pTargetChar = pTarget->GetChar();
+	if (pTargetChar->GetKeyNum("blockchat_pm") ||
+		(!strcmpi(pTargetChar->GetKeyStr("chat_block"), m_pChar->GetName()) && !IsPriv(PRIV_GM)))
+	{
+		SysMessage("That character is not accepting your private messages.");
+		return;
+	}
+
+	if (mode == TALKMODE_TLK_PRIVATE_LOOKUP)
+	{
+		nachar wszName[MAX_TALK_BUFFER];
+		CvtSystemToNETUTF16(wszName, ARRAY_COUNT(wszName), pTargetChar->GetName(), -1);
+		addBarkUNICODE(wszName, pTargetChar, wHue, TALKMODE_TLK_PRIVATE_SELECTED, font, lang);
+		return;
+	}
+
+	nachar wszText[MAX_TALK_BUFFER];
+	CvtSystemToNETUTF16(wszText, ARRAY_COUNT(wszText), message, -1);
+	pTarget->addBarkUNICODE(wszText, m_pChar, wHue, TALKMODE_TLK_PRIVATE, font, lang);
+	addBarkUNICODE(wszText, pTargetChar, wHue, TALKMODE_TLK_PRIVATE_SENT, font, lang);
+}
+
 // PC speech: response to ASCII speech request
 void CClient::Event_Talk( lpctstr pszText, HUE_TYPE wHue, TALKMODE_TYPE mode, bool fNoStrip)
 {
@@ -2045,7 +2228,8 @@ void CClient::Event_Talk( lpctstr pszText, HUE_TYPE wHue, TALKMODE_TYPE mode, bo
 	CAccount *pAccount = GetAccount();
 	ASSERT(pAccount && m_pChar && m_pChar->m_pPlayer);
 
-	if ( mode < 0 || mode > 14 ) // Less or greater is an exploit
+	if ((mode < 0 || mode > 14) && mode != TALKMODE_TLK_GLOBAL &&
+		mode != TALKMODE_TLK_PRIVATE && mode != TALKMODE_TLK_PRIVATE_LOOKUP)
 		return;
 
 	// These modes are server->client only
@@ -2098,9 +2282,18 @@ void CClient::Event_Talk( lpctstr pszText, HUE_TYPE wHue, TALKMODE_TYPE mode, bo
 				GetSocketID(), m_pChar->GetName(), pszText, mode, fCancelSpeech ? " (muted)" : "");
 		}
 
-		// Guild and Alliance mode will not pass this
-		if ( mode == 13 || mode == 14 )
+		if (mode == TALKMODE_GUILD || mode == TALKMODE_ALLIANCE)
+		{
+			if (!fCancelSpeech && len <= 128)
+				Event_TalkGuildOrFaction(pszText, wHue, mode, m_pChar->m_fonttype, pAccount->m_lang);
 			return;
+		}
+		if (mode == TALKMODE_TLK_GLOBAL || mode == TALKMODE_TLK_PRIVATE || mode == TALKMODE_TLK_PRIVATE_LOOKUP)
+		{
+			if (!fCancelSpeech && len <= (mode == TALKMODE_TLK_PRIVATE ? 160u : 128u))
+				Event_TalkTLKChat(pszText, wHue, mode, m_pChar->m_fonttype, pAccount->m_lang);
+			return;
+		}
 
 		Str_CopyLimitNull(z, pszText, sizeof(z));
 
@@ -2144,7 +2337,8 @@ void CClient::Event_TalkUNICODE(nachar* wszText, int iTextLen, HUE_TYPE wHue, TA
 	if ( iTextLen <= 0 )
 		return;
 
-	if ( mMode < 0 || mMode > 14 ) // Less or greater is an exploit
+	if ((mMode < 0 || mMode > 14) && mMode != TALKMODE_TLK_GLOBAL &&
+		mMode != TALKMODE_TLK_PRIVATE && mMode != TALKMODE_TLK_PRIVATE_LOOKUP)
 		return;
 
 	// These modes are server->client only
@@ -2183,9 +2377,18 @@ void CClient::Event_TalkUNICODE(nachar* wszText, int iTextLen, HUE_TYPE wHue, TA
 				m_pChar->GetName(), pAccount->m_lang.GetStr(), pszText, mMode, fCancelSpeech ? " (muted)" : "" );
 		}
 
-		// Guild and Alliance mode will not pass this.
-		if ( mMode == 13 || mMode == 14 )
+		if (mMode == TALKMODE_GUILD || mMode == TALKMODE_ALLIANCE)
+		{
+			if (!fCancelSpeech && iLen <= 128)
+				Event_TalkGuildOrFaction(pszText, wHue, mMode, font, pAccount->m_lang);
 			return;
+		}
+		if (mMode == TALKMODE_TLK_GLOBAL || mMode == TALKMODE_TLK_PRIVATE || mMode == TALKMODE_TLK_PRIVATE_LOOKUP)
+		{
+			if (!fCancelSpeech && iLen <= (mMode == TALKMODE_TLK_PRIVATE ? 160 : 128))
+				Event_TalkTLKChat(pszText, wHue, mMode, font, pAccount->m_lang);
+			return;
+		}
 
 		if ( g_Cfg.m_fSuppressCapitals )
 		{
