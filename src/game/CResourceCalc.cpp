@@ -236,14 +236,15 @@ int CServerConfig::Calc_CombatChanceToHit(const CChar * pChar, const CChar * pCh
 			iChance = std::clamp(iChance, 60, 90);
 
 			// HCI and DCI modify the established chance proportionally. Equal values cancel.
-			const int iHCI = std::clamp(iAttackerHitChance, 0, 45);
+			// Negative values represent debuffs, including values below a creature's base zero.
+			const int iHCI = std::clamp(iAttackerHitChance, -45, 45);
 			const int iDCI = std::clamp(
-				static_cast<int>(pCharTarg->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEDEFCHANCE, true)), 0, 45);
+				static_cast<int>(pCharTarg->GetPropNum(COMP_PROPS_CHAR, PROPCH_INCREASEDEFCHANCE, true)), -45, 45);
 			iChance = static_cast<int>(
 				(static_cast<int64>(iChance) * (100 + iHCI)) / (100 + iDCI));
 
-			// Skills alone never fall below 60%; defensive equipment can lower the final
-			// chance further, while every attacker retains at least a coin-flip chance.
+			// Skills alone never fall below 60%; equipment and signed HCI/DCI modifiers
+			// can move the final chance, while every attacker retains at least a coin-flip chance.
 			return std::clamp(iChance, 50, 95);
 		}
 	}
