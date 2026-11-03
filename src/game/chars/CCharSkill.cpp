@@ -360,11 +360,11 @@ void CChar::Skill_Decay()
 	}
 }
 
-void CChar::Skill_Experience( SKILL_TYPE skill, int iDifficulty )
+void CChar::Skill_Experience( SKILL_TYPE skill, int iDifficulty, bool fFailed )
 {
 	ADDTOCALLSTACK("CChar::Skill_Experience");
-	// Give the char credit for using the skill.
-	// More credit for the more difficult. or none if too easy
+	// Give the char credit for eligible skill use.
+    // ADV_RATE sets probability; GAINRADIUS rejects challenges that are too easy.
 	//
 	// ARGS:
 	//  difficulty = skill target from 0-100
@@ -378,11 +378,18 @@ void CChar::Skill_Experience( SKILL_TYPE skill, int iDifficulty )
 	if (pSkillDef == nullptr)
 		return;
 
-	iDifficulty *= 10;
-	if ( iDifficulty < 1 )
-		iDifficulty = 1;
-	else if ( iDifficulty > 1000 )
-		iDifficulty = 1000;
+    // Failure is independent of ACTDIFF: @SkillFail may restore a positive
+    // recipe difficulty after a scripted success/failure roll.
+    fFailed = fFailed || (iDifficulty < 0);
+    const int iFailGainPercent = g_Cfg.m_iSkillFailGainPercent;
+    int64 iGainDifficulty = (int64)iDifficulty * 10;
+    if ((iFailGainPercent >= 0) && (iGainDifficulty < 0))
+    {
+        iGainDifficulty = -iGainDifficulty;
+    }
+    // Legacy (-1) still clamps failed difficulty to 1. Enabled mode retains
+    // the full challenge for GAINRADIUS; only the advancement chance is reduced.
+    iDifficulty = (int)std::clamp<int64>(iGainDifficulty, 1, 1000);
 
 	if ( IsPlayer() )
 	{
@@ -399,12 +406,12 @@ void CChar::Skill_Experience( SKILL_TYPE skill, int iDifficulty )
 	// Higher the number = the less probable to advance.
 	// Extrapolate a place in the range.
 
-	// give a bonus or a penalty if the task was too hard or too easy.
-	// no gain at all if it was WAY TOO easy
+	// Check challenge eligibility before running advancement hooks.
+    // The advancement curve itself still uses the current skill level.
 	ushort uiSkillLevel = Skill_GetBase( skill );
 	const ushort uiSkillLevelFixed = (uiSkillLevel < 50) ? 50 : uiSkillLevel;
 	const int iGainRadius = pSkillDef->m_GainRadius;
-	if ((iGainRadius > 0) && ((iDifficulty + iGainRadius) < uiSkillLevelFixed))
+	if ((iGainRadius > 0) && (((int64)iDifficulty + iGainRadius) < uiSkillLevelFixed))
 	{
 		if ( GetKeyNum("NOSKILLMSG") )
 			SysMessage( g_Cfg.GetDefaultMsg(DEFMSG_GAINRADIUS_NOT_MET) );
@@ -428,14 +435,33 @@ void CChar::Skill_Experience( SKILL_TYPE skill, int iDifficulty )
 	}
     pScriptArgs->GetArgNs( nullptr, &iChance, &iSkillMax );
 
+    // Apply once, after gain hooks, so their bonuses keep the failure penalty.
+    if (fFailed && (iFailGainPercent >= 0))
+    {
+        iChance = IMulDivLL(iChance, iFailGainPercent, 100);
+    }
+
 	if ( iChance <= 0 )
 		return;
+
+    // Positive GAINRADIUS weights successful gains; zero retains flat chances.
+    // Keep decay on the pre-bonus chance; stat processing is independent below.
+    const int64 iDecayChance = iChance;
+    if (!fFailed && (iDifficulty > 0) && (iGainRadius > 0))
+    {
+        const int64 iRadius = iGainRadius;
+        const int64 iDelta = std::clamp<int64>((int64)iDifficulty - uiSkillLevel, -iRadius, iRadius);
+        // Fixed 75%-125% curve: matching difficulty keeps the base chance.
+        // Hundredths of a percent avoid premature rounding; cap harder tasks.
+        const int64 iFactor = 10000 + (iDelta * 2500 / iRadius);
+        iChance = std::min<int64>(1000, IMulDivLL(std::min<int64>(iChance, 1000), iFactor, 10000));
+    }
 
 	const int iRoll = g_Rand.GetVal(1000);
 	if ( uiSkillLevelFixed < (ushort)iSkillMax )	// are we in position to gain skill ?
 	{
 		// slightly more chance of decay than gain
-		if ( (iRoll * 3) <= int(iChance * 4) )
+		if ( (iRoll * 3) <= int(iDecayChance * 4) )
 			Skill_Decay();
 
 		if (iDifficulty > 0 )
@@ -448,7 +474,7 @@ void CChar::Skill_Experience( SKILL_TYPE skill, int iDifficulty )
 					iDifficulty/10, iChance/10, iChance%10, iRoll/10 );
 			}
 
-			if ( iRoll <= iChance )
+			if ( (iChance > 0) && (iRoll <= iChance) )
 			{
 				++uiSkillLevel;
 				Skill_SetBase( skill, uiSkillLevel );
@@ -588,7 +614,7 @@ bool CChar::Skill_UseQuick(SKILL_TYPE skill, int64 iDifficulty, bool fAllowGain,
 	else			// fail
 	{
         if ( fAllowGain )
-            Skill_Experience( skill, (int)(-iDifficulty) );
+            Skill_Experience( skill, (int)(-iDifficulty), true );
 		return false;
 	}
 }
@@ -3847,8 +3873,11 @@ void CChar::Skill_Fail( bool fCancel )
     if ( Skill_Stage(fCancel ? SKTRIG_ABORT : SKTRIG_FAIL) >= 0 )
 	{
 		// Get some experience for failure ?
-		if ( !fCancel )
-			Skill_Experience(skill, m_Act_Difficulty);
+        if (!fCancel)
+        {
+            // Keep the outcome even if @SkillFail supplied a positive difficulty.
+            Skill_Experience(skill, m_Act_Difficulty, true);
+        }
 	}
 
 	Skill_Cleanup();

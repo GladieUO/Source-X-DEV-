@@ -987,7 +987,7 @@ public:
 private:
 	int Skill_Done();	 // complete skill (async)
 	void Skill_Decay();
-	void Skill_Experience( SKILL_TYPE skill, int difficulty );
+	void Skill_Experience( SKILL_TYPE skill, int difficulty, bool fFailed = false );
 
 	int Skill_NaturalResource_Setup( CItem * pResBit );
 	CItem * Skill_NaturalResource_Create( CItem * pResBit, SKILL_TYPE skill );

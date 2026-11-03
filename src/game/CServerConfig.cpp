@@ -154,6 +154,7 @@ CServerConfig::CServerConfig()
 	m_fDeadCannotSeeLiving	= 0;
 	m_iMediumCanHearGhosts	= 1000;
 	m_iSkillPracticeMax		= 300;
+    m_iSkillFailGainPercent = -1;
 	m_iPacketDeathAnimation = true;
 	m_fCharTags				= false;
 	m_fVendorTradeTitle		= true;
@@ -699,6 +700,7 @@ enum RC_TYPE
 	RC_SCPFILES,
 	RC_SECTORSLEEP,				// _iSectorSleepDelay
 	RC_SECURE,
+    RC_SKILLFAILGAINPERCENT,       // m_iSkillFailGainPercent
 	RC_SKILLPRACTICEMAX,		// m_iSkillPracticeMax
 	RC_SNOOPCRIMINAL,
 	RC_SPEECHOTHER,
@@ -998,6 +1000,7 @@ const CAssocReg CServerConfig::sm_szLoadKeys[RC_QTY + 1]
 	{ "SCPFILES",				{ ELEM_CSTRING,	static_cast<uint>OFFSETOF(CServerConfig,m_sSCPBaseDir)			}},
 	{ "SECTORSLEEP",			{ ELEM_INT,		static_cast<uint>OFFSETOF(CServerConfig,_iSectorSleepDelay)		}},
 	{ "SECURE",					{ ELEM_BOOL,	static_cast<uint>OFFSETOF(CServerConfig,m_fSecure)				}},
+    { "SKILLFAILGAINPERCENT",     { ELEM_INT, static_cast<uint>OFFSETOF(CServerConfig,m_iSkillFailGainPercent) }},
 	{ "SKILLPRACTICEMAX",		{ ELEM_INT,		static_cast<uint>OFFSETOF(CServerConfig,m_iSkillPracticeMax)		}},
 	{ "SNOOPCRIMINAL",			{ ELEM_INT,		static_cast<uint>OFFSETOF(CServerConfig,m_iSnoopCriminal)		}},
 	{ "SPEECHOTHER",			{ ELEM_CSTRING,	static_cast<uint>OFFSETOF(CServerConfig,m_sSpeechOther)			}},
@@ -1436,6 +1439,10 @@ bool CServerConfig::r_LoadVal( CScript &s )
 		case RC_PACKETDEATHANIMATION:
 			m_iPacketDeathAnimation = s.GetArgVal() > 0 ? true : false;
 			break;
+
+        case RC_SKILLFAILGAINPERCENT:
+            m_iSkillFailGainPercent = (int)std::clamp<int64>(s.GetArgLLVal(), -1, 100);
+            break;
 
 		case RC_SKILLPRACTICEMAX:
 			m_iSkillPracticeMax = s.GetArgVal();
