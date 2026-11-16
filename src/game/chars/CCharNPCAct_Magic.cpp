@@ -171,6 +171,7 @@ bool CChar::NPC_FightMagery(CChar * pChar)
 
     int iDist = GetTopDist3D(pChar);
     if (iDist > g_Cfg.m_iMaxSpellRange) // way too far away . close in.
+    {
         return false;
     }
 
