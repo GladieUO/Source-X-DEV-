@@ -2861,6 +2861,11 @@ int CChar::ItemPickup(CItem * pItem, word amount)
 
 			// protect from snoop - disallow picking from not opened containers
 			bool fIsInOpenedContainer = false;
+
+		    if (!client) {
+		      return -1;
+		    }
+
 			CClient::OpenedContainerMap_t::iterator itContainerFound = client->m_openedContainers.find( pItemCont->GetUID().GetPrivateUID() );
 			if ( itContainerFound != client->m_openedContainers.end() )
 			{
@@ -3122,14 +3127,16 @@ bool CChar::ItemBounce( CItem * pItem, bool fDisplayMsg )
 			{
 				fCanAddToPack = false;
 				const CItem* pCont = dynamic_cast<const CItem*>(pItem->GetContainer());
-				if (pPrevCont == pCont) //In the same cont, but unable to go there
-					fDropOnGround = true;
-				else //we changed the cont in the script
-				{
-					tchar* pszMsg = Str_GetTemp();
-					snprintf(pszMsg, Str_TempLength(), g_Cfg.GetDefaultMsg(DEFMSG_MSG_BOUNCE_CONT), pCont->GetName());
-					pszWhere = pszMsg;
-				}
+                if (pCont) {
+				    if (pPrevCont == pCont) //In the same cont, but unable to go there
+					    fDropOnGround = true;
+				    else //we changed the cont in the script
+				    {
+					    tchar* pszMsg = Str_GetTemp();
+					    snprintf(pszMsg, Str_TempLength(), g_Cfg.GetDefaultMsg(DEFMSG_MSG_BOUNCE_CONT), pCont->GetName());
+					    pszWhere = pszMsg;
+				    }
+                }
 			}
 		}
 	}
@@ -5528,6 +5535,10 @@ bool CChar::SetPrivLevel(CTextConsole * pSrc, lpctstr pszFlags)
 		return false;
 
 	CAccount *pAccount = m_pPlayer->GetAccount();
+    if (!pAccount) {
+		return false;
+    }
+
 	PLEVEL_TYPE PrivLevel = CAccount::GetPrivLevelText(pszFlags);
 
 	// Remove Previous GM Robe
@@ -6200,6 +6211,9 @@ bool CChar::OnTickPeriodic()
     if (IsClientActive())
     {
         CClient* pClient = GetClientActive();
+        if (!pClient) {
+          return true;
+        }
 
         // Players have a silly "always run" flag that gets stuck on.
         if ( (iTimeCur - pClient->m_timeLastEventWalk) > (2 * MSECS_PER_TENTH) )
